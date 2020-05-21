@@ -18,9 +18,9 @@ void audiocallback(float **in, float **out, size_t size)
 
 int main(void)
 {
-    hardware.Init();
     // GENERATE PREINIT START
     // GENERATE PREINIT END
+    hardware.Init();
     hardware.StartAdc();
     hardware.StartAudio(audiocallback);
     // GENERATE POSTINIT START
