@@ -23,6 +23,14 @@ The HVCC output has been tested on the daisy, with manual source code modificati
 
 an intiial cpp template exists in the util folder, along with submodules for the libraries needed.
 
+## Current state
+
+the pd2dsy script is currently written in python, and can be run as:
+
+`python pd2dsy.py pdfile.pd`
+
+This currently only runs the HVCC command and creates a new folder with the output source code.
+
 ## Next steps
 
 0. Add a functional example demonstrating audio/control usage with hvcc and libdaisy.
