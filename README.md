@@ -4,7 +4,7 @@ Utility for converting Pure Data (Vanilla) patches to ready-to-compile Daisy pro
 
 ## General Overview
 
-The goal of this project is to be able to run this command:
+The goal of this project is to be able to run a command like this:
 
 ```
 ./pd2dsy --board="Pod" mypatch.pd
