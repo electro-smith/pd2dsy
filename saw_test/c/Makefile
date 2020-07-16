@@ -1,10 +1,8 @@
 # Project Name
-#TARGET = template
-# TARGET LOCATION #
+TARGET = template
 
 # Sources
-#CPP_SOURCES =  template.cpp \
-# CPP LOCATION #
+CPP_SOURCES =  template.cpp \
 HeavyContext.cpp \
 Heavy_saw_test.cpp \
 HvHeavy.cpp \
