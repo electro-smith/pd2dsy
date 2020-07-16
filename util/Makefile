@@ -1,12 +1,9 @@
 # Project Name
-#TARGET = template
 # TARGET LOCATION #
 
 # Sources
-#CPP_SOURCES =  template.cpp \
 # CPP LOCATION #
 HeavyContext.cpp \
-Heavy_saw_test.cpp \
 HvHeavy.cpp \
 
 C_SOURCES = HvControlBinop.c \

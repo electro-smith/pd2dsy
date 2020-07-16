@@ -9,9 +9,9 @@ using namespace daisy;
 
 DSY_BOARD hardware;
 
-Heavy_saw_test hv(SAMPLE_RATE);
 int num_params;
 
+//Heavy_saw_test hv(SAMPLE_RATE);
 // GENERATE GLOBALS START
 // GENERATE GLOBALS END
 
@@ -35,12 +35,10 @@ int main(void)
     // GENERATE PREINIT END
     num_params = hv.getParameterInfo(0,NULL);
     
-    if (DSY_BOARD == seed)
-	hardware.Configure();
     hardware.Init();
 
-    if (DSY_BOARD != seed)
-	hardware.StartAdc();
+    // ADC
+    
     hardware.StartAudio(audiocallback);
     // GENERATE POSTINIT START
     // GENERATE POSTINIT END
