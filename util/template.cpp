@@ -2,8 +2,7 @@
 
 #include "daisy_boards.h"
 
-// GENERATE INCLUDES START
-// GENERATE INCLUDES END
+// GENERATE INCLUDES
 
 using namespace daisy;
 
@@ -11,9 +10,7 @@ DSY_BOARD hardware;
 
 int num_params;
 
-//Heavy_saw_test hv(SAMPLE_RATE);
-// GENERATE GLOBALS START
-// GENERATE GLOBALS END
+// GENERATE GLOBALS
 
 void audiocallback(float *in, float *out, size_t size)
 {
@@ -25,26 +22,22 @@ void audiocallback(float *in, float *out, size_t size)
     }
     
     hv.processInlineInterleaved(in, out, size/2);	
-    // GENERATE AUDIOCALLBACK START
-    // GENERATE AUDIOCALLBACK END
+    // GENERATE AUDIOCALLBACK
 }
 
 int main(void)
 {
-    // GENERATE PREINIT START
-    // GENERATE PREINIT END
+    // GENERATE PREINIT
     num_params = hv.getParameterInfo(0,NULL);
     
     hardware.Init();
 
-    // ADC
+    // GENERATE ADC
     
     hardware.StartAudio(audiocallback);
-    // GENERATE POSTINIT START
-    // GENERATE POSTINIT END
+    // GENERATE POSTINIT
     for(;;)
     {
-        // GENERATE INFINITELOOP START
-        // GENERATE INFINITELOOP END
+        // GENERATE INFINITELOOP
     }
 }

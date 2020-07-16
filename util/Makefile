@@ -1,8 +1,8 @@
 # Project Name
-# TARGET LOCATION #
+# GENERATE TARGET
 
 # Sources
-# CPP LOCATION #
+# GENERATE CPP
 HeavyContext.cpp \
 HvHeavy.cpp \
 

@@ -31,6 +31,11 @@ import shutil
 import fileinput
 #import hvcc.hvcc as hv
 
+#sorry for all the global vars....
+basename = ''
+filename = ''
+board = ''
+
 def searchReplace(file, find, replace):
     f = open(file,'r')
     filedata = f.read()
@@ -42,13 +47,72 @@ def searchReplace(file, find, replace):
     f.write(newdata)
     f.close()
 
+paths = {
+    "Template" : "",
+    "Makefile" : "",
+    "Boards" : ""
+}
+    
+replaceComments = {
+    "Includes" : "// GENERATE INCLUDES",
+    "Globals" :  "// GENERATE GLOBALS",
+    "Preinit" :  "// GENERATE PREINIT",
+    "ADC" :      "// GENERATE ADC",
+    "Target" :   "# GENERATE TARGET",
+    "CPP" :      "# GENERATE CPP",
+    "Board" :    "// GENERATE BOARD"
+}
+    
+def generateIncludes():
+    searchReplace(paths["Template"], replaceComments["Includes"], '#include "Heavy_' + basename + '.hpp"')
+
+def generateGlobals():
+    searchReplace(paths["Template"], replaceComments["Globals"], 'Heavy_' + basename + ' hv(SAMPLE_RATE);')
+
+def generatePreinit():
+    st = ''
+    if (board == 'seed'):
+        st = 'hardware.Configure();'
+    searchReplace(paths["Template"], replaceComments["Preinit"], st)
+        
+def generateAdc():
+    st = ''
+    if (board != "seed"):
+        st = 'hardware.AdcStart();'
+    searchReplace(paths["Template"], replaceComments["ADC"], st)
+  
+def generateTarget():
+    searchReplace(paths["Makefile"], replaceComments["Target"], 'TARGET = ' + basename)
+    
+def generateCpp():
+    cppSources = 'CPP_SOURCES = ' + filename + ' \\\nHeavy_' + basename + '.cpp \\'
+    searchReplace(paths["Makefile"], replaceComments["CPP"], cppSources)
+
+def generateBoard():
+    searchReplace(paths["Board"], replaceComments["Board"], '#define DSY_BOARD Daisy' + board.capitalize())    
+
+replaceFunctions = {
+    "Includes" : generateIncludes,
+    "Globals" :  generateGlobals,
+    "Preinit" :  generatePreinit,
+    "ADC" :      generateAdc,
+    "Target" :   generateTarget,
+    "CPP" :      generateCpp,
+    "Board" :    generateBoard
+}
+
 def main():
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
     parser.add_argument('-b',  '--board', help='hardware platform for generated output.', default='seed')
+
     args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
+
+    global basename
     basename = os.path.basename(inpath).split('.')[0]
+
+    global board
     board = args.board
     print(("Converting {} for {} platform".format(basename, board)))
 
@@ -61,33 +125,19 @@ def main():
     shutil.copy(os.path.abspath('util/Makefile'), os.path.abspath(basename + '/c/'))
     shutil.copy(os.path.abspath('util/daisy_boards.h'), os.path.abspath(basename + '/c/'))
 
-    # Modify template
+    #template filename
+    global filename
     filename = basename + '.cpp'
-    templatePath = os.path.abspath(basename + '/c/' + filename)
-    os.rename(os.path.abspath(basename + '/c/template.cpp'), templatePath)
 
-    # this is a lazy way to do this for now
-    searchReplace(templatePath, '// GENERATE INCLUDES START', '#include "Heavy_' + basename + '.hpp"')
-    searchReplace(templatePath, '// GENERATE GLOBALS START', 'Heavy_' + basename + ' hv(SAMPLE_RATE);')
+    #paths to files, and move template
+    paths["Template"] = os.path.abspath(basename + '/c/' + filename)
+    os.rename(os.path.abspath(basename + '/c/template.cpp'), paths["Template"])
 
-    adc = ''
-    if (board == 'seed'):
-        searchReplace(templatePath, '// GENERATE PREINIT START', 'hardware.Configure();')
-    else:
-        adc = 'hardware.AdcStart();'
-        
-    searchReplace(templatePath, '// ADC', adc)
-    
-    # Modify Makefile
-    makePath = os.path.abspath(basename + '/c/' + 'Makefile')
-    searchReplace(makePath, '# TARGET LOCATION #', 'TARGET = ' + basename)
-    cppSources = 'CPP_SOURCES = ' + filename + ' \\\nHeavy_' + basename + '.cpp \\'
+    paths["Makefile"] = os.path.abspath(basename + '/c/' + 'Makefile')        
+    paths["Board"] = os.path.abspath(basename + '/c/' + 'daisy_boards.h')
 
-    searchReplace(makePath, '# CPP LOCATION #', cppSources)
-    
-    # Modify Boards
-    boardPath = os.path.abspath(basename + '/c/' + 'daisy_boards.h')
-    searchReplace(boardPath, '// GENERATE BOARD', '#define DSY_BOARD Daisy' + board.capitalize())
+    for i in replaceFunctions:
+        replaceFunctions[i]()
     
 if __name__ == "__main__":
     main()
