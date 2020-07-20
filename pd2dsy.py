@@ -48,6 +48,7 @@ def searchReplace(file, find, replace):
     f.close()
 
 paths = {
+    "Directory" : "",
     "Template" : "",
     "Makefile" : "",
     "Boards" : ""
@@ -55,12 +56,13 @@ paths = {
     
 replaceComments = {
     "Includes" : "// GENERATE INCLUDES",
-    "Globals" :  "// GENERATE GLOBALS",
-    "Preinit" :  "// GENERATE PREINIT",
-    "ADC" :      "// GENERATE ADC",
-    "Target" :   "# GENERATE TARGET",
-    "CPP" :      "# GENERATE CPP",
-    "Board" :    "// GENERATE BOARD"
+    "Globals"  :  "// GENERATE GLOBALS",
+    "Preinit"  :  "// GENERATE PREINIT",
+    "ADC"      :  "// GENERATE ADC",
+    "Target"   :  "# GENERATE TARGET",
+    "C"        :  "# GENERATE C",
+    "CPP"      :  "# GENERATE CPP",
+    "Board"    :  "// GENERATE BOARD"
 }
     
 def generateIncludes():
@@ -78,7 +80,7 @@ def generatePreinit():
 def generateAdc():
     st = ''
     if (board != "seed"):
-        st = 'hardware.AdcStart();'
+        st = 'hardware.StartAdc();'
     searchReplace(paths["Template"], replaceComments["ADC"], st)
   
 def generateTarget():
@@ -88,17 +90,25 @@ def generateCpp():
     cppSources = 'CPP_SOURCES = ' + filename + ' \\\nHeavy_' + basename + '.cpp \\'
     searchReplace(paths["Makefile"], replaceComments["CPP"], cppSources)
 
+def generateC():
+    files = "C_SOURCES = "
+    for file in os.listdir(paths["Directory"]):
+        if file.endswith(".c"):
+            files += file + " \\\n"
+    searchReplace(paths["Makefile"], replaceComments["C"], files)
+        
 def generateBoard():
     searchReplace(paths["Board"], replaceComments["Board"], '#define DSY_BOARD Daisy' + board.capitalize())    
 
 replaceFunctions = {
     "Includes" : generateIncludes,
-    "Globals" :  generateGlobals,
-    "Preinit" :  generatePreinit,
-    "ADC" :      generateAdc,
-    "Target" :   generateTarget,
-    "CPP" :      generateCpp,
-    "Board" :    generateBoard
+    "Globals"  : generateGlobals,
+    "Preinit"  : generatePreinit,
+    "ADC"      : generateAdc,
+    "Target"   : generateTarget,
+    "CPP"      : generateCpp,
+    "C"        : generateC,
+    "Board"    : generateBoard
 }
 
 def main():
@@ -130,6 +140,7 @@ def main():
     filename = basename + '.cpp'
 
     #paths to files, and move template
+    paths["Directory"] = os.path.abspath(basename +'/c/')
     paths["Template"] = os.path.abspath(basename + '/c/' + filename)
     os.rename(os.path.abspath(basename + '/c/template.cpp'), paths["Template"])
 

@@ -6,17 +6,7 @@
 HeavyContext.cpp \
 HvHeavy.cpp \
 
-C_SOURCES = HvControlBinop.c \
-HvControlCast.c \
-HvControlVar.c \
-HvLightPipe.c \
-HvMessage.c \
-HvMessagePool.c \
-HvMessageQueue.c \
-HvSignalPhasor.c \
-HvSignalVar.c \
-HvTable.c \
-HvUtils.c \
+# GENERATE C
 
 # Library Locations
 LIBDAISY_DIR = ../../libdaisy
