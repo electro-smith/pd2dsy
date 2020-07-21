@@ -6,20 +6,17 @@
 
 using namespace daisy;
 
-DSY_BOARD hardware;
+DSY_BOARD* hardware;
 
 int num_params;
 
 Heavy_saw_test hv(SAMPLE_RATE);
 
+void ProcessControls();
+
 void audiocallback(float *in, float *out, size_t size)
 {
-    for (int i = 0; i < num_params; i++)
-    {
-	HvParameterInfo info;
-	hv.getParameterInfo(i, &info);
-	hv.sendFloatToReceiver(info.hash, 0.2f);
-    }
+    ProcessControls();
     
     hv.processInlineInterleaved(in, out, size/2);	
     // GENERATE AUDIOCALLBACK
@@ -27,17 +24,31 @@ void audiocallback(float *in, float *out, size_t size)
 
 int main(void)
 {
-    hardware.Configure();
+    hardware = &boardsHardware;
+    hardware->Configure();
     num_params = hv.getParameterInfo(0,NULL);
-    
-    hardware.Init();
+
+    hardware->Init();
 
     
     
-    hardware.StartAudio(audiocallback);
+    hardware->StartAudio(audiocallback);
     // GENERATE POSTINIT
     for(;;)
     {
         // GENERATE INFINITELOOP
+    }
+}
+
+void ProcessControls()
+{
+    // GENERATE DEBOUNCE
+    
+    for (int i = 0; i < num_params; i++)
+    {
+	HvParameterInfo info;
+	hv.getParameterInfo(i, &info);
+	
+	hv.sendFloatToReceiver(info.hash, 0.2f);
     }
 }

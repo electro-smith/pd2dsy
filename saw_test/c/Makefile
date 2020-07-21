@@ -7,17 +7,18 @@ Heavy_saw_test.cpp \
 HeavyContext.cpp \
 HvHeavy.cpp \
 
-C_SOURCES = HvControlBinop.c \
-HvControlCast.c \
-HvControlVar.c \
-HvLightPipe.c \
-HvMessage.c \
-HvMessagePool.c \
-HvMessageQueue.c \
-HvSignalPhasor.c \
+C_SOURCES = HvLightPipe.c \
 HvSignalVar.c \
+HvMessagePool.c \
 HvTable.c \
+HvControlCast.c \
 HvUtils.c \
+HvMessage.c \
+HvControlVar.c \
+HvSignalPhasor.c \
+HvControlBinop.c \
+HvMessageQueue.c \
+
 
 # Library Locations
 LIBDAISY_DIR = ../../libdaisy

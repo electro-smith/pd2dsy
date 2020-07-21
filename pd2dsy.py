@@ -55,42 +55,54 @@ paths = {
 }
     
 replaceComments = {
-    "Includes"  : "// GENERATE INCLUDES",
+    "Includes"  :  "// GENERATE INCLUDES",
     "Globals"   :  "// GENERATE GLOBALS",
     "Preinit"   :  "// GENERATE PREINIT",
     "ADC"       :  "// GENERATE ADC",
+    "Debounce"  :  "// GENERATE DEBOUNCE",
+    "Controls"  :  "// GENERATE CONTROLS",
     "Target"    :  "# GENERATE TARGET",
     "C"         :  "# GENERATE C",
     "CPP"       :  "# GENERATE CPP",
-    "Board" :  "// GENERATE BOARD"
+    "Board"     :  "// GENERATE BOARD",
 }
     
-def generateIncludes():
+def generateCpp():
+    #Includes
     searchReplace(paths["Template"], replaceComments["Includes"], '#include "Heavy_' + basename + '.hpp"')
 
-def generateGlobals():
+    #Globals
     searchReplace(paths["Template"], replaceComments["Globals"], 'Heavy_' + basename + ' hv(SAMPLE_RATE);')
 
-def generatePreinit():
+    #Preinit
     st = ''
     if (board == 'seed'):
         st = 'hardware->Configure();'
     searchReplace(paths["Template"], replaceComments["Preinit"], st)
-        
-def generateAdc():
+
+    #ADC
     st = ''
     if (board != "seed"):
         st = 'hardware->StartAdc();'
     searchReplace(paths["Template"], replaceComments["ADC"], st)
-  
-def generateTarget():
+
+    #Debounce
+    if (board != "seed"):
+        searchReplace(paths["Template"], replaceComments["Debounce"], 'hardware->DebounceControls();\nhardware->UpdateAnalogControls();')
+
+    #Controls
+    if(board == "seed"):
+        searchReplace(paths["Template"], replaceComments["Controls"], "hv.sendFloatToReceiver(info.hash, 0.f);")
+            
+        
+def generateMakefile():
     searchReplace(paths["Makefile"], replaceComments["Target"], 'TARGET = ' + basename)
     
-def generateCpp():
+    #CPP
     cppSources = 'CPP_SOURCES = ' + filename + ' \\\nHeavy_' + basename + '.cpp \\'
     searchReplace(paths["Makefile"], replaceComments["CPP"], cppSources)
 
-def generateC():
+    #C
     files = "C_SOURCES = "
     for file in os.listdir(paths["Directory"]):
         if file.endswith(".c"):
@@ -105,13 +117,8 @@ def generateBoard():
     searchReplace(paths["Board"], board + " */", "")    
     
 replaceFunctions = {
-    "Includes" : generateIncludes,
-    "Globals"  : generateGlobals,
-    "Preinit"  : generatePreinit,
-    "ADC"      : generateAdc,
-    "Target"   : generateTarget,
-    "CPP"      : generateCpp,
-    "C"        : generateC,
+    "Includes" : generateCpp,
+    "Makefile" : generateMakefile,
     "Board"    : generateBoard
 }
 

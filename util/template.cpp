@@ -24,10 +24,10 @@ void audiocallback(float *in, float *out, size_t size)
 
 int main(void)
 {
+    hardware = &boardsHardware;
     // GENERATE PREINIT
     num_params = hv.getParameterInfo(0,NULL);
 
-    hardware = &boardsHardware;
     hardware->Init();
 
     // GENERATE ADC
@@ -42,14 +42,15 @@ int main(void)
 
 void ProcessControls()
 {
-    hardware->DebounceControls();
-    hardware->UpdateAnalogControls();
+    // GENERATE DEBOUNCE
     
     for (int i = 0; i < num_params; i++)
     {
 	HvParameterInfo info;
 	hv.getParameterInfo(i, &info);
-
+	
+	// GENERATE CONTROLS
+	
 	std::string name(info.name);
 
 	for (int j = 0; j < DaisyNumParameters; j++){
