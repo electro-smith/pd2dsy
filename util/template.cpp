@@ -6,20 +6,17 @@
 
 using namespace daisy;
 
-DSY_BOARD hardware;
+DSY_BOARD* hardware;
 
 int num_params;
 
 // GENERATE GLOBALS
 
+void ProcessControls();
+
 void audiocallback(float *in, float *out, size_t size)
 {
-    for (int i = 0; i < num_params; i++)
-    {
-	HvParameterInfo info;
-	hv.getParameterInfo(i, &info);
-	hv.sendFloatToReceiver(info.hash, 0.f);
-    }
+    ProcessControls();
     
     hv.processInlineInterleaved(in, out, size/2);	
     // GENERATE AUDIOCALLBACK
@@ -29,15 +26,42 @@ int main(void)
 {
     // GENERATE PREINIT
     num_params = hv.getParameterInfo(0,NULL);
-    
-    hardware.Init();
+
+    hardware = &boardsHardware;
+    hardware->Init();
 
     // GENERATE ADC
     
-    hardware.StartAudio(audiocallback);
+    hardware->StartAudio(audiocallback);
     // GENERATE POSTINIT
     for(;;)
     {
         // GENERATE INFINITELOOP
+    }
+}
+
+void ProcessControls()
+{
+    hardware->DebounceControls();
+    hardware->UpdateAnalogControls();
+    
+    for (int i = 0; i < num_params; i++)
+    {
+	HvParameterInfo info;
+	hv.getParameterInfo(i, &info);
+
+	std::string name(info.name);
+
+	for (int j = 0; j < DaisyNumParameters; j++){
+	    if (DaisyParameters[j].name == name)
+	    {
+		float sig = DaisyParameters[j].Process();
+		
+		if (! DaisyParameters[j].isBang)
+		    hv.sendFloatToReceiver(info.hash, sig);
+		else if(sig)
+		    hv.sendBangToReceiver(info.hash);
+	    }
+	}	
     }
 }

@@ -55,14 +55,14 @@ paths = {
 }
     
 replaceComments = {
-    "Includes" : "// GENERATE INCLUDES",
-    "Globals"  :  "// GENERATE GLOBALS",
-    "Preinit"  :  "// GENERATE PREINIT",
-    "ADC"      :  "// GENERATE ADC",
-    "Target"   :  "# GENERATE TARGET",
-    "C"        :  "# GENERATE C",
-    "CPP"      :  "# GENERATE CPP",
-    "Board"    :  "// GENERATE BOARD"
+    "Includes"  : "// GENERATE INCLUDES",
+    "Globals"   :  "// GENERATE GLOBALS",
+    "Preinit"   :  "// GENERATE PREINIT",
+    "ADC"       :  "// GENERATE ADC",
+    "Target"    :  "# GENERATE TARGET",
+    "C"         :  "# GENERATE C",
+    "CPP"       :  "# GENERATE CPP",
+    "Board" :  "// GENERATE BOARD"
 }
     
 def generateIncludes():
@@ -74,13 +74,13 @@ def generateGlobals():
 def generatePreinit():
     st = ''
     if (board == 'seed'):
-        st = 'hardware.Configure();'
+        st = 'hardware->Configure();'
     searchReplace(paths["Template"], replaceComments["Preinit"], st)
         
 def generateAdc():
     st = ''
     if (board != "seed"):
-        st = 'hardware.StartAdc();'
+        st = 'hardware->StartAdc();'
     searchReplace(paths["Template"], replaceComments["ADC"], st)
   
 def generateTarget():
@@ -98,8 +98,12 @@ def generateC():
     searchReplace(paths["Makefile"], replaceComments["C"], files)
         
 def generateBoard():
+    #board type
     searchReplace(paths["Board"], replaceComments["Board"], '#define DSY_BOARD Daisy' + board.capitalize())    
-
+    #remove comments around board init stuff
+    searchReplace(paths["Board"], "/* " + board, "")    
+    searchReplace(paths["Board"], board + " */", "")    
+    
 replaceFunctions = {
     "Includes" : generateIncludes,
     "Globals"  : generateGlobals,

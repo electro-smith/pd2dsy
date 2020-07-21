@@ -3,13 +3,14 @@
 #ifndef DSY_BOARD
 #define DSY_BOARD DaisyPod
 #endif
+#endif
 #include "daisy_seed.h"
 #include "daisy_pod.h"
 #include "daisy_patch.h"
 #include "daisy_field.h"
 #include "daisy_petal.h"
-
 #include <string>
+
 using namespace daisy;
 
 //All the info we need for our parameters
@@ -42,6 +43,7 @@ struct DaisyHvParam{
 
 DSY_BOARD boardsHardware;
 
+
 int DaisyNumParameters = 6;
 DaisyHvParam DaisyParameters[6] = {
     {"Encoder", &boardsHardware.encoder, nullptr, nullptr, false, 0},
@@ -52,4 +54,4 @@ DaisyHvParam DaisyParameters[6] = {
     {"Button2", nullptr, &boardsHardware.button2, nullptr, true, 2}  
 };
 
-#endif
+
