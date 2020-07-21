@@ -46,6 +46,7 @@ extern "C" {
 typedef enum {
   HV_POD_TEST_PARAM_IN_BUTTON1 = 0xB4D78F23, // Button1
   HV_POD_TEST_PARAM_IN_BUTTON2 = 0x3FE62CA, // Button2
+  HV_POD_TEST_PARAM_IN_ENCSWITCH = 0x7AAC371F, // EncSwitch
   HV_POD_TEST_PARAM_IN_KNOB1 = 0x62DD3F82, // Knob1
   HV_POD_TEST_PARAM_IN_KNOB2 = 0x6BE4E001, // Knob2
 } Hv_pod_test_ParameterIn;

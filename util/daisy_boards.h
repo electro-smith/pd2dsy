@@ -8,4 +8,14 @@
 #include "daisy_patch.h"
 #include "daisy_field.h"
 #include "daisy_petal.h"
+#include <string>
+
+//All the info we need for our parameters
+struct DaisyHvParam{
+    std::string name;
+    bool isBang;
+};
+
+DaisyHvParam DaisyParameters[1] = {{"Knob1", false}};
+
 #endif
