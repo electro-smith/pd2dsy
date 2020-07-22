@@ -57,8 +57,10 @@ paths = {
 replaceComments = {
     "Includes"  :  "// GENERATE INCLUDES",
     "Globals"   :  "// GENERATE GLOBALS",
+    "Callback"  :  "// GENERATE CALLBACK",
     "Preinit"   :  "// GENERATE PREINIT",
     "ADC"       :  "// GENERATE ADC",
+    "Loop"      :  "// GENERATE INFINITELOOP",
     "Debounce"  :  "// GENERATE DEBOUNCE",
     "Controls"  :  "// GENERATE CONTROLS",
     "Target"    :  "# GENERATE TARGET",
@@ -74,6 +76,16 @@ def generateCpp():
     #Globals
     searchReplace(paths["Template"], replaceComments["Globals"], 'Heavy_' + basename + ' hv(SAMPLE_RATE);')
 
+    #Callback
+    cb = ""
+    if (board == 'seed' or board == 'pod'):
+        cb += 'void audiocallback(float *in, float *out, size_t size)\n{\n'
+        cb += '    hv.processInlineInterleaved(in, out, size/2);\n'
+    else:
+        cb += 'void audiocallback(float **in, float **out, size_t size)\n{\n'
+        cb += '    hv.process(in, out, size);\n'
+    searchReplace(paths["Template"], replaceComments["Callback"], cb)
+        
     #Preinit
     st = ''
     if (board == 'seed'):
@@ -86,6 +98,10 @@ def generateCpp():
         st = 'hardware->StartAdc();'
     searchReplace(paths["Template"], replaceComments["ADC"], st)
 
+    #InfiniteLoop
+    if (board == 'patch'):
+        searchReplace(paths["Template"], replaceComments["Loop"], 'hardware->DisplayControls(false);')
+    
     #Debounce
     if (board != "seed"):
         searchReplace(paths["Template"], replaceComments["Debounce"], 'hardware->DebounceControls();\nhardware->UpdateAnalogControls();')
@@ -93,7 +109,7 @@ def generateCpp():
     #Controls
     if(board == "seed"):
         searchReplace(paths["Template"], replaceComments["Controls"], "hv.sendFloatToReceiver(info.hash, 0.f);")
-            
+
         
 def generateMakefile():
     searchReplace(paths["Makefile"], replaceComments["Target"], 'TARGET = ' + basename)
@@ -112,6 +128,7 @@ def generateMakefile():
 def generateBoard():
     #board type
     searchReplace(paths["Board"], replaceComments["Board"], '#define DSY_BOARD Daisy' + board.capitalize())    
+
     #remove comments around board init stuff
     searchReplace(paths["Board"], "/* " + board, "")    
     searchReplace(paths["Board"], board + " */", "")    

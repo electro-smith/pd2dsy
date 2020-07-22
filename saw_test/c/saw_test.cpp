@@ -49,6 +49,20 @@ void ProcessControls()
 	HvParameterInfo info;
 	hv.getParameterInfo(i, &info);
 	
-	hv.sendFloatToReceiver(info.hash, 0.2f);
+	hv.sendFloatToReceiver(info.hash, 0.f);
+	
+	std::string name(info.name);
+
+	for (int j = 0; j < DaisyNumParameters; j++){
+	    if (DaisyParameters[j].name == name)
+	    {
+		float sig = DaisyParameters[j].Process();
+		
+		if (! DaisyParameters[j].isBang)
+		    hv.sendFloatToReceiver(info.hash, sig);
+		else if(sig)
+		    hv.sendBangToReceiver(info.hash);
+	    }
+	}	
     }
 }

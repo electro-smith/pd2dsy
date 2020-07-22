@@ -30,8 +30,8 @@
  * 
  */
 
-#ifndef _HEAVY_POD_TEST_H_
-#define _HEAVY_POD_TEST_H_
+#ifndef _HEAVY_PATCH_TEST_H_
+#define _HEAVY_PATCH_TEST_H_
 
 #include "HvHeavy.h"
 
@@ -44,20 +44,22 @@ extern "C" {
 #endif
 
 typedef enum {
-  HV_POD_TEST_PARAM_IN_BUTTON1 = 0xB4D78F23, // Button1
-  HV_POD_TEST_PARAM_IN_BUTTON2 = 0x3FE62CA, // Button2
-  HV_POD_TEST_PARAM_IN_ENCSWITCH = 0x7AAC371F, // EncSwitch
-  HV_POD_TEST_PARAM_IN_ENCODER = 0x39ADE514, // Encoder
-  HV_POD_TEST_PARAM_IN_KNOB1 = 0x62DD3F82, // Knob1
-  HV_POD_TEST_PARAM_IN_KNOB2 = 0x6BE4E001, // Knob2
-} Hv_pod_test_ParameterIn;
+  HV_PATCH_TEST_PARAM_IN_CTRL1 = 0xCFD93C2D, // Ctrl1
+  HV_PATCH_TEST_PARAM_IN_CTRL2 = 0xA6D27094, // Ctrl2
+  HV_PATCH_TEST_PARAM_IN_CTRL3 = 0xB00C3479, // Ctrl3
+  HV_PATCH_TEST_PARAM_IN_CTRL4 = 0x4BA4C205, // Ctrl4
+  HV_PATCH_TEST_PARAM_IN_ENCSWITCH = 0x7AAC371F, // EncSwitch
+  HV_PATCH_TEST_PARAM_IN_ENCODER = 0x39ADE514, // Encoder
+  HV_PATCH_TEST_PARAM_IN_GATE1 = 0x378CB51F, // Gate1
+  HV_PATCH_TEST_PARAM_IN_GATE2 = 0x8924DDEB, // Gate2
+} Hv_patch_test_ParameterIn;
 
 
 /**
  * Creates a new patch instance.
  * Sample rate should be positive and in Hertz, e.g. 44100.0.
  */
-HeavyContextInterface *hv_pod_test_new(double sampleRate);
+HeavyContextInterface *hv_patch_test_new(double sampleRate);
 
 /**
  * Creates a new patch instance.
@@ -71,10 +73,10 @@ HeavyContextInterface *hv_pod_test_new(double sampleRate);
  *   amount of memory dedicated to holding scheduled messages to the default sendHook.
  *   See getNextSentMessage() for info on accessing these messages. Default is 0 KB.
  */
-HeavyContextInterface *hv_pod_test_new_with_options(double sampleRate, int poolKb, int inQueueKb, int outQueueKb);
+HeavyContextInterface *hv_patch_test_new_with_options(double sampleRate, int poolKb, int inQueueKb, int outQueueKb);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-#endif // _HEAVY_POD_TEST_H_
+#endif // _HEAVY_PATCH_TEST_H_

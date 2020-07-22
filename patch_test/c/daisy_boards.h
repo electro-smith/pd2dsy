@@ -1,7 +1,7 @@
 #ifndef DSY_BOARDS_H
 #define DSY_BOARDS_H
 #ifndef DSY_BOARD
-// GENERATE BOARD
+#define DSY_BOARD DaisyPatch
 #endif
 #endif
 #include "daisy_seed.h"
@@ -63,7 +63,7 @@ DaisyHvParam DaisyParameters[6] = {
 };
 pod */
 
-/* patch
+
 int DaisyNumParameters = 8;
 DaisyHvParam DaisyParameters[8] = {
     {"Encoder", &boardsHardware.encoder, nullptr, nullptr, nullptr, false, 0},
@@ -76,4 +76,4 @@ DaisyHvParam DaisyParameters[8] = {
     {"Gate2",   nullptr, nullptr, nullptr, &boardsHardware.gate_input[1], true, 4},
 
 };
-patch */
+

@@ -1,9 +1,9 @@
 # Project Name
-TARGET = pod_test
+TARGET = patch_test
 
 # Sources
-CPP_SOURCES = pod_test.cpp \
-Heavy_pod_test.cpp \
+CPP_SOURCES = patch_test.cpp \
+Heavy_patch_test.cpp \
 HeavyContext.cpp \
 HvHeavy.cpp \
 

@@ -14,12 +14,8 @@ int num_params;
 
 void ProcessControls();
 
-void audiocallback(float *in, float *out, size_t size)
-{
+// GENERATE CALLBACK
     ProcessControls();
-    
-    hv.processInlineInterleaved(in, out, size/2);	
-    // GENERATE AUDIOCALLBACK
 }
 
 int main(void)
