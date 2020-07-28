@@ -57,34 +57,21 @@ paths = {
 replaceComments = {
     "Includes"  :  "// GENERATE INCLUDES",
     "Globals"   :  "// GENERATE GLOBALS",
-    "Callback"  :  "// GENERATE CALLBACK",
     "Preinit"   :  "// GENERATE PREINIT",
     "ADC"       :  "// GENERATE ADC",
     "Loop"      :  "// GENERATE INFINITELOOP",
     "Debounce"  :  "// GENERATE DEBOUNCE",
     "Controls"  :  "// GENERATE CONTROLS",
     "Target"    :  "# GENERATE TARGET",
-    "C"         :  "# GENERATE C",
-    "CPP"       :  "# GENERATE CPP",
     "Board"     :  "// GENERATE BOARD",
 }
     
 def generateCpp():
     #Includes
-    searchReplace(paths["Template"], replaceComments["Includes"], '#include "Heavy_' + basename + '.hpp"')
+    searchReplace(paths["Template"], replaceComments["Includes"], '#include "c/Heavy_' + basename + '.hpp"')
 
     #Globals
     searchReplace(paths["Template"], replaceComments["Globals"], 'Heavy_' + basename + ' hv(SAMPLE_RATE);')
-
-    #Callback
-    cb = ""
-    if (board == 'seed' or board == 'pod'):
-        cb += 'void audiocallback(float *in, float *out, size_t size)\n{\n'
-        cb += '    hv.processInlineInterleaved(in, out, size/2);\n'
-    else:
-        cb += 'void audiocallback(float **in, float **out, size_t size)\n{\n'
-        cb += '    hv.process(in, out, size);\n'
-    searchReplace(paths["Template"], replaceComments["Callback"], cb)
         
     #Preinit
     st = ''
@@ -113,17 +100,6 @@ def generateCpp():
         
 def generateMakefile():
     searchReplace(paths["Makefile"], replaceComments["Target"], 'TARGET = ' + basename)
-    
-    #CPP
-    cppSources = 'CPP_SOURCES = ' + filename + ' \\\nHeavy_' + basename + '.cpp \\'
-    searchReplace(paths["Makefile"], replaceComments["CPP"], cppSources)
-
-    #C
-    files = "C_SOURCES = "
-    for file in os.listdir(paths["Directory"]):
-        if file.endswith(".c"):
-            files += file + " \\\n"
-    searchReplace(paths["Makefile"], replaceComments["C"], files)
         
 def generateBoard():
     #board type
@@ -159,21 +135,21 @@ def main():
     os.system(command)
 
     # Copy over template.cpp, Makefile, and daisy_boards.h
-    shutil.copy(os.path.abspath('util/template.cpp'), os.path.abspath(basename + '/c/'))
-    shutil.copy(os.path.abspath('util/Makefile'), os.path.abspath(basename + '/c/'))
-    shutil.copy(os.path.abspath('util/daisy_boards.h'), os.path.abspath(basename + '/c/'))
+    shutil.copy(os.path.abspath('util/template.cpp'), os.path.abspath(basename))
+    shutil.copy(os.path.abspath('util/Makefile'), os.path.abspath(basename))
+    shutil.copy(os.path.abspath('util/daisy_boards.h'), os.path.abspath(basename))
 
     #template filename
     global filename
     filename = basename + '.cpp'
 
     #paths to files, and move template
-    paths["Directory"] = os.path.abspath(basename +'/c/')
-    paths["Template"] = os.path.abspath(basename + '/c/' + filename)
-    os.rename(os.path.abspath(basename + '/c/template.cpp'), paths["Template"])
-
-    paths["Makefile"] = os.path.abspath(basename + '/c/' + 'Makefile')        
-    paths["Board"] = os.path.abspath(basename + '/c/' + 'daisy_boards.h')
+    paths["Directory"] = os.path.abspath(basename)
+    paths["Template"] = os.path.abspath(basename + '/' + filename)
+    os.rename(os.path.abspath(basename + '/template.cpp'), paths["Template"])
+       
+    paths["Makefile"] = os.path.abspath(basename + '/Makefile')        
+    paths["Board"] = os.path.abspath(basename + '/daisy_boards.h')
 
     for i in replaceFunctions:
         replaceFunctions[i]()

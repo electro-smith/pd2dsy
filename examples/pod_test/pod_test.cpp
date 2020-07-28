@@ -14,10 +14,9 @@ Heavy_pod_test hv(SAMPLE_RATE);
 
 void ProcessControls();
 
-void audiocallback(float *in, float *out, size_t size)
+void audiocallback(float **in, float **out, size_t size)
 {
-    hv.processInlineInterleaved(in, out, size/2);
-
+    hv.process(in, out, size);
     ProcessControls();
 }
 
@@ -58,7 +57,7 @@ hardware->UpdateAnalogControls();
 	    {
 		float sig = DaisyParameters[j].Process();
 		
-		if (! DaisyParameters[j].isBang)
+		if (DaisyParameters[j].mode == ENCODER || DaisyParameters[j].mode == KNOB)
 		    hv.sendFloatToReceiver(info.hash, sig);
 		else if(sig)
 		    hv.sendBangToReceiver(info.hash);

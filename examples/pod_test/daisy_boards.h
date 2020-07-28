@@ -13,33 +13,55 @@
 
 using namespace daisy;
 
+enum ControlType
+{
+    ENCODER,
+    SWITCH,
+    KNOB,
+    GATE,
+};
+
+
 //All the info we need for our parameters
 struct DaisyHvParam{
-    std::string name;
 
-    Encoder* enc;
-    Switch* sw;
-    AnalogControl* knob;
-    GateIn* gate;
+    std::string name;
+    void* control;
+    ControlType mode;
     
-    bool isBang;
-    
-    int mode;
     float Process()
     {
+	if (control == nullptr)
+	    return 0.f;
+	
 	switch (mode)
 	{
-	    case 0:
+	    case ENCODER:
+	    {
+		Encoder* enc = static_cast<Encoder*>(control);
 		return enc->Increment();
-	    case 1:
-		return enc->RisingEdge();
-	    case 2:
+	    }
+
+	    case SWITCH:
+	    {
+		Switch* sw = static_cast<Switch*>(control);
 		return sw->RisingEdge();
-	    case 3:
+	    }
+
+	    case KNOB:
+	    {
+		AnalogControl* knob = static_cast<AnalogControl*>(control);
 		return knob->Process();
-	    case 4:
+	    }
+
+	    case GATE:
+	    {
+	        GateIn* gate = static_cast<GateIn*>(control);
 		return gate->Trig();
+	    }
+
 	}
+	
 	return 0.f;
     }
 };
@@ -54,26 +76,25 @@ seed */
 
 int DaisyNumParameters = 6;
 DaisyHvParam DaisyParameters[6] = {
-    {"Encoder", &boardsHardware.encoder, nullptr, nullptr, nullptr, false, 0},
-    {"EncSwitch", &boardsHardware.encoder, nullptr, nullptr, nullptr, true, 1},
-    {"Knob1",   nullptr, nullptr, &boardsHardware.knob1, nullptr, false, 3},
-    {"Knob2",   nullptr, nullptr, &boardsHardware.knob2, nullptr, false, 3},
-    {"Button1", nullptr, &boardsHardware.button1, nullptr, nullptr, true, 2},
-    {"Button2", nullptr, &boardsHardware.button2, nullptr, nullptr, true, 2}  
+    {"Encoder",   &boardsHardware.encoder, ENCODER},
+    {"EncSwitch", &boardsHardware.encoder, SWITCH},
+    {"Knob1",     &boardsHardware.knob1,   KNOB},
+    {"Knob2",     &boardsHardware.knob2,   KNOB},
+    {"Button1",   &boardsHardware.button1, SWITCH},
+    {"Button2",   &boardsHardware.button2, SWITCH},
 };
 
 
 /* patch
 int DaisyNumParameters = 8;
 DaisyHvParam DaisyParameters[8] = {
-    {"Encoder", &boardsHardware.encoder, nullptr, nullptr, nullptr, false, 0},
-    {"EncSwitch", &boardsHardware.encoder, nullptr, nullptr, nullptr, true, 1},
-    {"Ctrl1",   nullptr, nullptr, &boardsHardware.controls[0], nullptr, false, 3},
-    {"Ctrl2",   nullptr, nullptr, &boardsHardware.controls[1], nullptr, false, 3},
-    {"Ctrl3",   nullptr, nullptr, &boardsHardware.controls[2], nullptr, false, 3},
-    {"Ctrl4",   nullptr, nullptr, &boardsHardware.controls[3], nullptr, false, 3},
-    {"Gate1",   nullptr, nullptr, nullptr, &boardsHardware.gate_input[0], true, 4},
-    {"Gate2",   nullptr, nullptr, nullptr, &boardsHardware.gate_input[1], true, 4},
-
+    {"Encoder",   &boardsHardware.encoder,       ENCODER},
+    {"EncSwitch", &boardsHardware.encoder,       SWITCH},
+    {"Ctrl1",     &boardsHardware.controls[0],   KNOB},
+    {"Ctrl2",     &boardsHardware.controls[1],   KNOB},
+    {"Ctrl3",     &boardsHardware.controls[2],   KNOB},
+    {"Ctrl4",     &boardsHardware.controls[3],   KNOB},
+    {"Gate1",     &boardsHardware.gate_input[0], GATE},
+    {"Gate2",     &boardsHardware.gate_input[1], GATE},
 };
 patch */

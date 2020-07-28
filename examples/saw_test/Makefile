@@ -1,8 +1,8 @@
 # Project Name
-# GENERATE TARGET
+TARGET = saw_test
 
 # Library Locations
-LIBDAISY_DIR = ../../libdaisy
+LIBDAISY_DIR = ../../../libdaisy
 HVCC_DIR = c
 
 # HVCC Sources
