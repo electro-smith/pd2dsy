@@ -2,7 +2,7 @@
 
 #include "daisy_boards.h"
 
-#include "Heavy_pod_test.hpp"
+#include "c/Heavy_pod_test.hpp"
 
 using namespace daisy;
 
