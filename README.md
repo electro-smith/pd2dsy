@@ -32,14 +32,17 @@ Here's all of the control names for each board.
 | Encoder | Float |
 | EncSwitch | Bang | 
 
-## Generating Code
-After you've made your patch, you can turn it into cpp by running the command:
+## Usage
+
+After you've made your patch in puredata, you can turn it into cpp by running the command:
 ```python pd2dsy.py --board <BOARD> <FILE>.pd```
 <BOARD> should be replaced with the board you're using (seed, pod, patch).
 <FILE> is the filename of your pd patch.
 
 cd into the directory the script creates. You can then run make, and make program-dfu to flash your board just like with daisysp.
 
+**For now, the script generates leaves the path to libdaisy as `../../libdaisy`. Which works if the generated folder is placed within the examples folder.
+Otherwise, the Makefile should be edited to point to a valid libdaisy repository.**
 
 ## How It Works
 
