@@ -2,7 +2,7 @@
 
 #include "daisy_boards.h"
 
-// GENERATE INCLUDES
+#include "c/Heavy_pod_test.hpp"
 
 using namespace daisy;
 
@@ -10,7 +10,7 @@ DSY_BOARD* hardware;
 
 int num_params;
 
-// GENERATE GLOBALS
+Heavy_pod_test hv(SAMPLE_RATE);
 
 void ProcessControls();
 
@@ -23,12 +23,12 @@ void audiocallback(float **in, float **out, size_t size)
 int main(void)
 {
     hardware = &boardsHardware;
-    // GENERATE PREINIT
+    
     num_params = hv.getParameterInfo(0,NULL);
 
     hardware->Init();
 
-    // GENERATE ADC
+    hardware->StartAdc();
     
     hardware->StartAudio(audiocallback);
     // GENERATE POSTINIT
@@ -40,7 +40,8 @@ int main(void)
 
 void ProcessControls()
 {
-    // GENERATE DEBOUNCE
+    hardware->DebounceControls();
+hardware->UpdateAnalogControls();
     
     for (int i = 0; i < num_params; i++)
     {

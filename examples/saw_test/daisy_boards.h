@@ -1,7 +1,7 @@
 #ifndef DSY_BOARDS_H
 #define DSY_BOARDS_H
 #ifndef DSY_BOARD
-// GENERATE BOARD
+#define DSY_BOARD DaisySeed
 #endif
 #endif
 #include "daisy_seed.h"
@@ -68,10 +68,10 @@ struct DaisyHvParam{
 
 DSY_BOARD boardsHardware;
 
-/* seed
+
 int DaisyNumParameters = 0;
 DaisyHvParam DaisyParameters[0];
-seed */
+
 
 /* pod
 int DaisyNumParameters = 6;

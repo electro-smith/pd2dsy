@@ -1,5 +1,5 @@
 # Project Name
-# GENERATE TARGET
+TARGET = pod_test
 
 # Library Locations
 LIBDAISY_DIR = ../../libdaisy

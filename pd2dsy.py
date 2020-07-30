@@ -27,22 +27,132 @@
 import os
 import argparse
 import subprocess
+import shutil
+import fileinput
 #import hvcc.hvcc as hv
 
+#sorry for all the global vars....
+basename = ''
+filename = ''
+board = ''
+
+def searchReplace(file, find, replace):
+    f = open(file,'r')
+    filedata = f.read()
+    f.close()
+
+    newdata = filedata.replace(find, replace)
+
+    f = open(file,'w')
+    f.write(newdata)
+    f.close()
+
+paths = {
+    "Directory" : "",
+    "Template" : "",
+    "Makefile" : "",
+    "Boards" : ""
+}
+    
+replaceComments = {
+    "Includes"  :  "// GENERATE INCLUDES",
+    "Globals"   :  "// GENERATE GLOBALS",
+    "Preinit"   :  "// GENERATE PREINIT",
+    "ADC"       :  "// GENERATE ADC",
+    "Loop"      :  "// GENERATE INFINITELOOP",
+    "Debounce"  :  "// GENERATE DEBOUNCE",
+    "Controls"  :  "// GENERATE CONTROLS",
+    "Target"    :  "# GENERATE TARGET",
+    "Board"     :  "// GENERATE BOARD",
+}
+    
+def generateCpp():
+    #Includes
+    searchReplace(paths["Template"], replaceComments["Includes"], '#include "c/Heavy_' + basename + '.hpp"')
+
+    #Globals
+    searchReplace(paths["Template"], replaceComments["Globals"], 'Heavy_' + basename + ' hv(SAMPLE_RATE);')
+        
+    #Preinit
+    st = ''
+    if (board == 'seed'):
+        st = 'hardware->Configure();'
+    searchReplace(paths["Template"], replaceComments["Preinit"], st)
+
+    #ADC
+    st = ''
+    if (board != "seed"):
+        st = 'hardware->StartAdc();'
+    searchReplace(paths["Template"], replaceComments["ADC"], st)
+
+    #InfiniteLoop
+    if (board == 'patch'):
+        searchReplace(paths["Template"], replaceComments["Loop"], 'hardware->DisplayControls(false);')
+    
+    #Debounce
+    if (board != "seed"):
+        searchReplace(paths["Template"], replaceComments["Debounce"], 'hardware->DebounceControls();\nhardware->UpdateAnalogControls();')
+
+    #Controls
+    if(board == "seed"):
+        searchReplace(paths["Template"], replaceComments["Controls"], "hv.sendFloatToReceiver(info.hash, 0.f);")
+
+        
+def generateMakefile():
+    searchReplace(paths["Makefile"], replaceComments["Target"], 'TARGET = ' + basename)
+        
+def generateBoard():
+    #board type
+    searchReplace(paths["Board"], replaceComments["Board"], '#define DSY_BOARD Daisy' + board.capitalize())    
+
+    #remove comments around board init stuff
+    searchReplace(paths["Board"], "/* " + board, "")    
+    searchReplace(paths["Board"], board + " */", "")    
+    
+replaceFunctions = {
+    "Includes" : generateCpp,
+    "Makefile" : generateMakefile,
+    "Board"    : generateBoard
+}
 
 def main():
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
     parser.add_argument('-b',  '--board', help='hardware platform for generated output.', default='seed')
+
     args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
+
+    global basename
     basename = os.path.basename(inpath).split('.')[0]
+
+    global board
     board = args.board
     print(("Converting {} for {} platform".format(basename, board)))
+
     # run heavy
     command = 'python hvcc/hvcc.py {} -o {} -n {} -g c'.format(inpath, basename, basename)
     os.system(command)
-    # Now do the parsing/generating
 
+    # Copy over template.cpp, Makefile, and daisy_boards.h
+    shutil.copy(os.path.abspath('util/template.cpp'), os.path.abspath(basename))
+    shutil.copy(os.path.abspath('util/Makefile'), os.path.abspath(basename))
+    shutil.copy(os.path.abspath('util/daisy_boards.h'), os.path.abspath(basename))
+
+    #template filename
+    global filename
+    filename = basename + '.cpp'
+
+    #paths to files, and move template
+    paths["Directory"] = os.path.abspath(basename)
+    paths["Template"] = os.path.abspath(basename + '/' + filename)
+    os.rename(os.path.abspath(basename + '/template.cpp'), paths["Template"])
+       
+    paths["Makefile"] = os.path.abspath(basename + '/Makefile')        
+    paths["Board"] = os.path.abspath(basename + '/daisy_boards.h')
+
+    for i in replaceFunctions:
+        replaceFunctions[i]()
+    
 if __name__ == "__main__":
     main()
