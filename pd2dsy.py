@@ -131,6 +131,7 @@ def main():
     print(("Converting {} for {} platform".format(basename, board)))
 
     # run heavy
+    os.mkdir(basename)
     command = 'python hvcc/hvcc.py {} -o {} -n {} -g c'.format(inpath, basename, basename)
     os.system(command)
 
