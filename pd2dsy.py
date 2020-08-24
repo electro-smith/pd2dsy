@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+#!/usr/bin/env python
 #
 # OVERVIEW:
 # - hvcc needs to be run on the input file (with appropriate flags for generating project.
@@ -119,9 +119,12 @@ def main():
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
     parser.add_argument('-b',  '--board', help='hardware platform for generated output.', default='seed')
+    parser.add_argument('-p',  '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
+    parser.add_argument('-c',  '--hvcc_cmd', type=str, help="hvcc command.", default='python hvcc/hvcc.py')
 
     args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
+    search_paths = args.search_paths or []
 
     global basename
     basename = os.path.basename(inpath).split('.')[0]
@@ -132,7 +135,7 @@ def main():
 
     # run heavy
     os.mkdir(basename)
-    command = 'python hvcc/hvcc.py {} -o {} -n {} -g c'.format(inpath, basename, basename)
+    command = '{} {} {} -o {} -n {} -g c'.format(args.hvcc_cmd, inpath, ' '.join('-p '+p for p in search_paths), basename, basename)
     os.system(command)
 
     # Copy over template.cpp, Makefile, and daisy_boards.h
