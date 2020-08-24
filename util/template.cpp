@@ -20,11 +20,18 @@ void audiocallback(float **in, float **out, size_t size)
     ProcessControls();
 }
 
+static void sendHook(HeavyContextInterface *c, const char *receiverName, uint32_t receiverHash, const HvMessage * m) {
+  // Do something with message sent from Pd patch through
+  // [send receiverName @hv_event] object(s)
+}
+
 int main(void)
 {
     hardware = &boardsHardware;
     // GENERATE PREINIT
     num_params = hv.getParameterInfo(0,NULL);
+
+    hv.setSendHook(sendHook);
 
     hardware->Init();
 
