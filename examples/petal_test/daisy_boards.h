@@ -1,7 +1,7 @@
 #ifndef DSY_BOARDS_H
 #define DSY_BOARDS_H
 #ifndef DSY_BOARD
-// GENERATE BOARD
+#define DSY_BOARD DaisyPetal
 #endif
 #endif
 #include "daisy_seed.h"
@@ -99,7 +99,7 @@ DaisyHvParam DaisyParameters[8] = {
 };
 patch */
 
-/* petal
+
 int DaisyNumParameters = 15;
 DaisyHvParam DaisyParameters[15] = {
     {"Encoder",   &boardsHardware.encoder,     ENCODER},
@@ -118,4 +118,4 @@ DaisyHvParam DaisyParameters[15] = {
     {"Switch6",   &boardsHardware.switches[5], SWITCH},
     {"Switch7",   &boardsHardware.switches[6], SWITCH},
 };
-petal */
+
