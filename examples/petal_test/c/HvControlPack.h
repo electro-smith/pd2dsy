@@ -14,8 +14,8 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _HEAVY_CONTROL_SLICE_H_
-#define _HEAVY_CONTROL_SLICE_H_
+#ifndef _HEAVY_CONTROL_PACK_H_
+#define _HEAVY_CONTROL_PACK_H_
 
 #include "HvHeavyInternal.h"
 
@@ -23,18 +23,19 @@
 extern "C" {
 #endif
 
-typedef struct ControlSlice {
-  int i; // start index
-  int n; // length of slice
-} ControlSlice;
+typedef struct ControlPack {
+  HvMessage *msg;
+} ControlPack;
 
-hv_size_t cSlice_init(ControlSlice *o, int i, int n);
+hv_size_t cPack_init(ControlPack *o, int nargs, ...);
 
-void cSlice_onMessage(HeavyContextInterface *_c, ControlSlice *o, int letIn, const HvMessage *m,
+void cPack_free(ControlPack *o);
+
+void cPack_onMessage(HeavyContextInterface *_c, ControlPack *o, int letIn, const HvMessage *m,
     void (*sendMessage)(HeavyContextInterface *, int, const HvMessage *));
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-#endif // _HEAVY_CONTROL_SLICE_H_
+#endif // _HEAVY_CONTROL_PACK_H_
