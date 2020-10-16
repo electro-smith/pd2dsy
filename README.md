@@ -10,7 +10,8 @@ Note: You can also set some defaults. ```r Knob1 @hv_param .5 0 1``` Defaults to
 
 Here's all of the control names for each board.
 
-# Pod
+### Pod
+
 | Name | Type |
 | --- | --- |
 | Knob1 | Float |
@@ -20,7 +21,8 @@ Here's all of the control names for each board.
 | Encoder | Float |
 | EncSwitch | Bang | 
 
-# Patch
+### Patch
+
 | Name | Type |
 | --- | --- |
 | Ctrl1 | Float |
@@ -31,6 +33,35 @@ Here's all of the control names for each board.
 | Gate2 | Bang |
 | Encoder | Float |
 | EncSwitch | Bang | 
+
+### Petal
+
+| Name | Type |
+| ---- | ---- |
+| Encoder | Float |
+| EncSwitch | Bang |
+| Knob1 | Float |
+| Knob2 | Float |
+| Knob3 | Float |
+| Knob4 | Float |
+| Knob5 | Float |
+| Knob6 | Float |
+| Switch1 | Bang |
+| Switch2 | Bang |
+| Switch3 | Bang |
+| Switch4 | Bang |
+| Switch5 | Bang |
+| Switch6 | Bang |
+| Switch7 | Bang |
+
+## Installation/Setup
+
+1. Clone the repo: `git clone https://github.com/electro-smith/pd2dsy`
+2. Navigate inside the repo, and initialize the submodules to populate a few resources for the utility: `git submodules update --init`
+3. Test that you have python installed, and that its the proper version. It should be python 2, not python 3. Test this by running: `python --version`
+4. Install the necessary python packages for hvcc: `python -m pip install -r hvcc/requirements.txt`
+
+You should now be able to run pd2dsy.py without issue.
 
 ## Usage
 
@@ -55,6 +86,9 @@ There are a few pieces to this:
 
 ## Next steps
 
-0. Add support for field and petal.
-1. Double check licensing requirements, etc. and bundle a pre-compiled binaries for the arm toolchain into the project for built-in compilation
-2. Add a GUI? (Web app / built in tester, similar to OWL platform?)
+0. Add support for Daisy Field.
+1. Clean up board support to be metadata based, and a bit easier to add new boards
+2. SDRAM support for larger buffers/delays.
+3. Add support different types of controls (i.e. switches are currently only bangs, but should also be able to be toggles). 
+4. Double check licensing requirements, etc. and bundle a pre-compiled binaries for the arm toolchain into the project for built-in compilation
+5. Add a GUI? (Web app / built in tester, similar to OWL platform?)
