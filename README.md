@@ -57,7 +57,7 @@ Here's all of the control names for each board.
 ## Installation/Setup
 
 1. Clone the repo: `git clone https://github.com/electro-smith/pd2dsy`
-2. Navigate inside the repo, and initialize the submodules to populate a few resources for the utility: `git submodules update --init`
+2. Navigate inside the repo, and initialize the submodules to populate a few resources for the utility: `git submodule update --init`
 3. Test that you have python installed, and that its the proper version. It should be python 2, not python 3. Test this by running: `python --version`
 4. Install the necessary python packages for hvcc: `python -m pip install -r hvcc/requirements.txt`
 
