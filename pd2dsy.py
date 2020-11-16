@@ -130,7 +130,7 @@ def main():
     basename = os.path.basename(inpath).split('.')[0]
 
     global board
-    board = args.board
+    board = args.board.lower()
     print(("Converting {} for {} platform".format(basename, board)))
 
     # run heavy
