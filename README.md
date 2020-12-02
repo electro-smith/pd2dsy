@@ -60,6 +60,8 @@ Here's all of the control names for each board.
 2. Navigate inside the repo, and initialize the submodules to populate a few resources for the utility: `git submodule update --init`
 3. Test that you have python installed, and that its the proper version. It should be python 2, not python 3. Test this by running: `python --version`
 4. Install the necessary python packages for hvcc: `python -m pip install -r hvcc/requirements.txt`
+5. Install arm-none-eabi-gcc toolchain, make, and dfu-util. There are [OS specific instructions in the Daisy Wiki](https://github.com/electro-smith/DaisyWiki/wiki).
+6. Compile the libdaisy library for use in the libdaisy code generator by navigating into the libdaisy folder and running: `make`
 
 You should now be able to run pd2dsy.py without issue.
 
