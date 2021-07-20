@@ -35,6 +35,8 @@ import fileinput
 basename = ''
 filename = ''
 board = ''
+linker = ''
+bootloader = ''
 
 def searchReplace(file, find, replace):
     f = open(file,'r')
@@ -63,6 +65,8 @@ replaceComments = {
     "Debounce"  :  "// GENERATE DEBOUNCE",
     "Controls"  :  "// GENERATE CONTROLS",
     "Target"    :  "# GENERATE TARGET",
+    "Linker"    :  "# LINKER",
+    "Bootloader":  "# BOOTLOADER",
     "Board"     :  "// GENERATE BOARD",
 }
     
@@ -100,6 +104,8 @@ def generateCpp():
         
 def generateMakefile():
     searchReplace(paths["Makefile"], replaceComments["Target"], 'TARGET = ' + basename)
+    searchReplace(paths["Makefile"], replaceComments["Linker"], linker)
+    searchReplace(paths["Makefile"], replaceComments["Bootloader"], bootloader)
         
 def generateBoard():
     #board type
@@ -121,6 +127,8 @@ def main():
     parser.add_argument('-b',  '--board', help='hardware platform for generated output.', default='seed')
     parser.add_argument('-p',  '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
     parser.add_argument('-c',  '--hvcc_cmd', type=str, help="hvcc command.", default='python hvcc/hvcc.py')
+    parser.add_argument('--big', action='store_true', help='execute program from SRAM (provides 4 times more space).')
+    parser.add_argument('--sdram', action='store_true', help='set default bss section to SDRAM (useful for large data buffers).')
 
     args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
@@ -142,6 +150,28 @@ def main():
     shutil.copy(os.path.abspath('util/template.cpp'), os.path.abspath(basename))
     shutil.copy(os.path.abspath('util/Makefile'), os.path.abspath(basename))
     shutil.copy(os.path.abspath('util/daisy_boards.h'), os.path.abspath(basename))
+
+    # Sort out linkers and copy if necessary
+    global linker
+    linker_var = 'LDSCRIPT = '
+    if args.big:
+        linker = linker_var + 'sram_linker_sdram.lds' if args.sdram else linker_var + 'sram_linker.lds'
+        linker_file = 'util/sram_linker_sdram.lds' if args.sdram else 'util/sram_linker.lds'
+    elif args.sdram:
+        linker = linker_var + 'default_linker_sdram.lds'
+        linker_file = 'util/default_linker_sdram.lds'
+
+    if linker_file is not None:
+        shutil.copy(os.path.abspath(linker_file), os.path.abspath(basename))
+
+    # Get name of linker and copy to project
+    # WARNING -- this is a simple search, make sure nothing else has the name 'bootloader' in it
+    global bootloader
+    for file in os.listdir(os.path.abspath('util')):
+        if 'bootloader' in file:
+            bootloader = 'BOOTLOADER = ' + file
+            shutil.copy(os.path.abspath(os.path.join('util', file)), os.path.abspath(basename))
+            break
 
     #template filename
     global filename
