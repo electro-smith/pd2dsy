@@ -135,9 +135,7 @@ SECTIONS
 		_ebss = .;
 
 		PROVIDE(__bss_end__ = _ebss);
-	} > DTCMRAM
-
-	PROVIDE(end = .); 
+	} > DTCMRAM 
 
 	.dtcmram_bss (NOLOAD) :
 	{
@@ -235,6 +233,8 @@ SECTIONS
 		. = ALIGN(4);
 		PROVIDE(__heap_end__ = .);
 	} > DTCMRAM
+
+	PROVIDE(end = .);
 
 	.reserved_for_stack (NOLOAD) :
 	{

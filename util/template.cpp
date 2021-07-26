@@ -14,9 +14,9 @@ int num_params;
 
 void ProcessControls();
 
-void audiocallback(float **in, float **out, size_t size)
+void audiocallback(AudioHandle::InputBuffer in, AudioHandle::OutputBuffer out, size_t size)
 {
-    hv.process(in, out, size);
+    hv.process((float**) in, out, size);
     ProcessControls();
 }
 
@@ -27,6 +27,7 @@ static void sendHook(HeavyContextInterface *c, const char *receiverName, uint32_
 
 int main(void)
 {
+    // GENERATE DEBUG
     hardware = &boardsHardware;
     // GENERATE PREINIT
     num_params = hv.getParameterInfo(0,NULL);

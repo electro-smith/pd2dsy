@@ -107,9 +107,7 @@ SECTIONS
 
 	_sidata = LOADADDR(.data);
 
-	PROVIDE(end = .); 
-
-  .bss (NOLOAD) :
+	.bss (NOLOAD) :
 	{
 		. = ALIGN(4);
 		_sbss = .;
@@ -122,7 +120,7 @@ SECTIONS
 		_ebss = .;
 
 		PROVIDE(__bss_end__ = _ebss);
-	} > SDRAM
+	} > SRAM
 
 	.dtcmram_bss (NOLOAD) :
 	{
@@ -233,7 +231,9 @@ SECTIONS
 		KEEP(*(.heap))
 		. = ALIGN(4);
 		PROVIDE(__heap_end__ = .);
-	} > SRAM
+	} > SDRAM
+
+	PROVIDE(end = .); 
 
 	.reserved_for_stack (NOLOAD) :
 	{
@@ -242,7 +242,7 @@ SECTIONS
 		KEEP(*(.reserved_for_stack))
 		. = ALIGN(4);
 		PROVIDE(__reserved_for_stack_end__ = .);
-	} > SRAM
+	} > DTCMRAM
 
     DISCARD :
     {

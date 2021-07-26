@@ -37,6 +37,8 @@ filename = ''
 board = ''
 linker = ''
 bootloader = ''
+big = False
+libdaisy_depth = ''
 
 def searchReplace(file, find, replace):
     f = open(file,'r')
@@ -53,12 +55,22 @@ paths = {
     "Directory" : "",
     "Template" : "",
     "Makefile" : "",
-    "Boards" : ""
+    "Boards" : "",
+    "Launch" : "",
+    "Tasks" : "",
+    "Properties" : "",
 }
+
+"""
+#ifdef DEBUG
+asm("bkpt 255");
+#endif
+"""
     
 replaceComments = {
     "Includes"  :  "// GENERATE INCLUDES",
     "Globals"   :  "// GENERATE GLOBALS",
+    "Debug"     :  "// GENERATE DEBUG",
     "Preinit"   :  "// GENERATE PREINIT",
     "ADC"       :  "// GENERATE ADC",
     "Loop"      :  "// GENERATE INFINITELOOP",
@@ -67,6 +79,7 @@ replaceComments = {
     "Target"    :  "# GENERATE TARGET",
     "Linker"    :  "# LINKER",
     "Bootloader":  "# BOOTLOADER",
+    "Depth"     :  "# LIBDAISY DEPTH",
     "Board"     :  "// GENERATE BOARD",
 }
     
@@ -76,6 +89,10 @@ def generateCpp():
 
     #Globals
     searchReplace(paths["Template"], replaceComments["Globals"], 'Heavy_' + basename + ' hv(SAMPLE_RATE);')
+
+    #Bootloader debug
+    if big:
+        searchReplace(paths["Template"], replaceComments["Debug"], '#ifdef DEBUG\n    asm("bkpt 255");\n    #endif\n')
         
     #Preinit
     st = ''
@@ -106,6 +123,12 @@ def generateMakefile():
     searchReplace(paths["Makefile"], replaceComments["Target"], 'TARGET = ' + basename)
     searchReplace(paths["Makefile"], replaceComments["Linker"], linker)
     searchReplace(paths["Makefile"], replaceComments["Bootloader"], bootloader)
+    searchReplace(paths["Makefile"], replaceComments["Depth"], libdaisy_depth)
+
+def generateVSCode():
+    searchReplace(paths["Launch"], replaceComments["Target"], basename)
+    searchReplace(paths["Tasks"], replaceComments["Depth"], libdaisy_depth)
+    searchReplace(paths["Properties"], replaceComments["Depth"], libdaisy_depth)
         
 def generateBoard():
     #board type
@@ -118,7 +141,8 @@ def generateBoard():
 replaceFunctions = {
     "Includes" : generateCpp,
     "Makefile" : generateMakefile,
-    "Board"    : generateBoard
+    "Board"    : generateBoard,
+    "VSCode"   : generateVSCode,
 }
 
 def main():
@@ -129,10 +153,17 @@ def main():
     parser.add_argument('-c',  '--hvcc_cmd', type=str, help="hvcc command.", default='python hvcc/hvcc.py')
     parser.add_argument('--big', action='store_true', help='execute program from SRAM (provides 4 times more space).')
     parser.add_argument('--sdram', action='store_true', help='set default bss section to SDRAM (useful for large data buffers).')
+    parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=2)
 
     args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
     search_paths = args.search_paths or []
+
+    global big
+    big = args.big
+
+    global libdaisy_depth
+    libdaisy_depth = "../" * args.libdaisy_depth
 
     global basename
     basename = os.path.basename(inpath).split('.')[0]
@@ -151,9 +182,16 @@ def main():
     shutil.copy(os.path.abspath('util/Makefile'), os.path.abspath(basename))
     shutil.copy(os.path.abspath('util/daisy_boards.h'), os.path.abspath(basename))
 
+    # Copy over vscode files
+    vscode_dir = os.path.join(os.path.abspath(basename), '.vscode')
+    os.mkdir(vscode_dir)
+    for file in os.listdir('util/vscode'):
+        shutil.copy(os.path.abspath(os.path.join('util/vscode',file)), vscode_dir)
+
     # Sort out linkers and copy if necessary
     global linker
     linker_var = 'LDSCRIPT = '
+    linker_file = None
     if args.big:
         linker = linker_var + 'sram_linker_sdram.lds' if args.sdram else linker_var + 'sram_linker.lds'
         linker_file = 'util/sram_linker_sdram.lds' if args.sdram else 'util/sram_linker.lds'
@@ -184,6 +222,10 @@ def main():
        
     paths["Makefile"] = os.path.abspath(basename + '/Makefile')        
     paths["Board"] = os.path.abspath(basename + '/daisy_boards.h')
+
+    paths["Properties"] = os.path.abspath(os.path.join(basename, '.vscode/c_cpp_properties.json'))
+    paths["Launch"] = os.path.abspath(os.path.join(basename, '.vscode/launch.json'))
+    paths["Tasks"] = os.path.abspath(os.path.join(basename, '.vscode/tasks.json'))
 
     for i in replaceFunctions:
         replaceFunctions[i]()
