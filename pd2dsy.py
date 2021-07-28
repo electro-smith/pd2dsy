@@ -25,6 +25,7 @@
 #     for now it can be detected/generated into the PREINIT section.
 #
 import os
+import sys
 import argparse
 import subprocess
 import shutil
@@ -145,12 +146,33 @@ replaceFunctions = {
     "VSCode"   : generateVSCode,
 }
 
+# Note -- this probably already exists as a module, but here's mine
+def queryUser(prompt, fallback='n'):
+    trueTuple = ('y', 'yes')
+    falseTuple = ('n', 'no')
+    if fallback.lower() in trueTuple:
+        response = raw_input(prompt + ' [Y/n] ')
+        return response.lower().strip() not in falseTuple
+    elif fallback.lower() in falseTuple:
+        response = raw_input(prompt + ' [y/N] ')
+        return response.lower().strip() in trueTuple
+    else:
+        response = raw_input(prompt + ' [y/n] ')
+        while (response.lower().strip() not in ('y', 'yes', 'n', 'no')):
+            response = raw_input(prompt + 'please provide a valid yes/no input ')
+        return True if response.lower().strip() in trueTuple else False
+
+def halt():
+    print('No files generated.')
+    sys.exit(1)
+
 def main():
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
     parser.add_argument('-b',  '--board', help='hardware platform for generated output.', default='seed')
     parser.add_argument('-p',  '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
     parser.add_argument('-c',  '--hvcc_cmd', type=str, help="hvcc command.", default='python hvcc/hvcc.py')
+    parser.add_argument('-d', type=str, help="set the parent directory of the output.", default='.')
     parser.add_argument('--big', action='store_true', help='execute program from SRAM (provides 4 times more space).')
     parser.add_argument('--sdram', action='store_true', help='set default bss section to SDRAM (useful for large data buffers).')
     parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=2)
@@ -168,22 +190,39 @@ def main():
     global basename
     basename = os.path.basename(inpath).split('.')[0]
 
+    parent = args.d
+    output = os.path.join(parent, basename)
+
     global board
     board = args.board.lower()
     print(("Converting {} for {} platform".format(basename, board)))
 
     # run heavy
-    os.mkdir(basename)
-    command = '{} {} {} -o {} -n {} -g c'.format(args.hvcc_cmd, inpath, ' '.join('-p '+p for p in search_paths), basename, basename)
+    if not os.path.exists(parent):
+        if not queryUser('Directory "' + parent + '" does not exist. Create?', fallback='y'):
+            halt()
+        # normpath prevents makedirs from getting confused
+        os.makedirs(os.path.normpath(parent))
+    
+    if os.path.exists(output):
+        beautified = output if output[:2] != './' else output[2:]
+        if not queryUser('Directory "' + beautified + '" already exists. Overwrite?'):
+            halt()
+        shutil.rmtree(output)
+        os.mkdir(output)
+    else:
+        os.mkdir(output)
+    
+    command = '{} {} {} -o {} -n {} -g c'.format(args.hvcc_cmd, inpath, ' '.join('-p '+p for p in search_paths), output, basename)
     os.system(command)
 
     # Copy over template.cpp, Makefile, and daisy_boards.h
-    shutil.copy(os.path.abspath('util/template.cpp'), os.path.abspath(basename))
-    shutil.copy(os.path.abspath('util/Makefile'), os.path.abspath(basename))
-    shutil.copy(os.path.abspath('util/daisy_boards.h'), os.path.abspath(basename))
+    shutil.copy(os.path.abspath('util/template.cpp'), os.path.abspath(output))
+    shutil.copy(os.path.abspath('util/Makefile'), os.path.abspath(output))
+    shutil.copy(os.path.abspath('util/daisy_boards.h'), os.path.abspath(output))
 
     # Copy over vscode files
-    vscode_dir = os.path.join(os.path.abspath(basename), '.vscode')
+    vscode_dir = os.path.join(os.path.abspath(output), '.vscode')
     os.mkdir(vscode_dir)
     for file in os.listdir('util/vscode'):
         shutil.copy(os.path.abspath(os.path.join('util/vscode',file)), vscode_dir)
@@ -200,7 +239,7 @@ def main():
         linker_file = 'util/default_linker_sdram.lds'
 
     if linker_file is not None:
-        shutil.copy(os.path.abspath(linker_file), os.path.abspath(basename))
+        shutil.copy(os.path.abspath(linker_file), os.path.abspath(output))
 
     # Get name of linker and copy to project
     # WARNING -- this is a simple search, make sure nothing else has the name 'bootloader' in it
@@ -208,7 +247,7 @@ def main():
     for file in os.listdir(os.path.abspath('util')):
         if 'bootloader' in file:
             bootloader = 'BOOTLOADER = ' + file
-            shutil.copy(os.path.abspath(os.path.join('util', file)), os.path.abspath(basename))
+            shutil.copy(os.path.abspath(os.path.join('util', file)), os.path.abspath(output))
             break
 
     #template filename
@@ -216,16 +255,16 @@ def main():
     filename = basename + '.cpp'
 
     #paths to files, and move template
-    paths["Directory"] = os.path.abspath(basename)
-    paths["Template"] = os.path.abspath(basename + '/' + filename)
-    os.rename(os.path.abspath(basename + '/template.cpp'), paths["Template"])
+    paths["Directory"] = os.path.abspath(output)
+    paths["Template"] = os.path.abspath(output + '/' + filename)
+    os.rename(os.path.abspath(output + '/template.cpp'), paths["Template"])
        
-    paths["Makefile"] = os.path.abspath(basename + '/Makefile')        
-    paths["Board"] = os.path.abspath(basename + '/daisy_boards.h')
+    paths["Makefile"] = os.path.abspath(output + '/Makefile')        
+    paths["Board"] = os.path.abspath(output + '/daisy_boards.h')
 
-    paths["Properties"] = os.path.abspath(os.path.join(basename, '.vscode/c_cpp_properties.json'))
-    paths["Launch"] = os.path.abspath(os.path.join(basename, '.vscode/launch.json'))
-    paths["Tasks"] = os.path.abspath(os.path.join(basename, '.vscode/tasks.json'))
+    paths["Properties"] = os.path.abspath(os.path.join(output, '.vscode/c_cpp_properties.json'))
+    paths["Launch"] = os.path.abspath(os.path.join(output, '.vscode/launch.json'))
+    paths["Tasks"] = os.path.abspath(os.path.join(output, '.vscode/tasks.json'))
 
     for i in replaceFunctions:
         replaceFunctions[i]()
