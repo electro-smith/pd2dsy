@@ -232,7 +232,7 @@ SECTIONS
 		KEEP(*(.heap))
 		. = ALIGN(4);
 		PROVIDE(__heap_end__ = .);
-	} > DTCMRAM
+	} > RAM_D2
 
 	PROVIDE(end = .);
 

@@ -78,8 +78,8 @@
       "type": "shell"
     },
     {
-      "command": "make program-sram",
-      "label": "program_sram",
+      "command": "make program-target",
+      "label": "program_target",
       "problemMatcher": [],
       "type": "shell"
     },
@@ -107,8 +107,8 @@
       "type": "shell"
     },
     {
-      "command": "make clean; make SRAM=1",
-      "label": "build_libdaisy_sram",
+      "command": "make clean; make TARGET=1",
+      "label": "build_libdaisy_target",
       "options": {
         "cwd": "${workspaceFolder}/# LIBDAISY DEPTHlibdaisy/"
       },
@@ -118,8 +118,8 @@
       "type": "shell"
     },
     {
-      "command": "make clean; make SRAM=1 DEBUG=1",
-      "label": "build_libdaisy_sram_debug",
+      "command": "make clean; make TARGET=1 DEBUG=1",
+      "label": "build_libdaisy_target_debug",
       "options": {
         "cwd": "${workspaceFolder}/# LIBDAISY DEPTHlibdaisy/"
       },

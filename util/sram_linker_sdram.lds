@@ -135,7 +135,7 @@ SECTIONS
 		_ebss = .;
 
 		PROVIDE(__bss_end__ = _ebss);
-	} > DTCMRAM
+	} > RAM_D2
 
 	.dtcmram_bss (NOLOAD) :
 	{
@@ -150,8 +150,6 @@ SECTIONS
 
 		PROVIDE(__dtcmram_bss_end__ = _edtcmram_bss);
 	} > DTCMRAM
-
-	PROVIDE(end = .); 
 
 	/*
 	.sdram_text :
@@ -236,6 +234,8 @@ SECTIONS
 		. = ALIGN(4);
 		PROVIDE(__heap_end__ = .);
 	} > SDRAM
+
+	PROVIDE(end = .); 
 
 	.reserved_for_stack (NOLOAD) :
 	{
