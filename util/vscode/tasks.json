@@ -107,8 +107,8 @@
       "type": "shell"
     },
     {
-      "command": "make clean; make TARGET=1",
-      "label": "build_libdaisy_target",
+      "command": "make clean; make VOLATILE=1",
+      "label": "build_libdaisy_volatile",
       "options": {
         "cwd": "${workspaceFolder}/# LIBDAISY DEPTHlibdaisy/"
       },
@@ -118,8 +118,8 @@
       "type": "shell"
     },
     {
-      "command": "make clean; make TARGET=1 DEBUG=1",
-      "label": "build_libdaisy_target_debug",
+      "command": "make clean; make VOLATILE=1 DEBUG=1",
+      "label": "build_libdaisy_volatile_debug",
       "options": {
         "cwd": "${workspaceFolder}/# LIBDAISY DEPTHlibdaisy/"
       },
