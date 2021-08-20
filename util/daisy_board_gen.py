@@ -8,167 +8,58 @@ import json
 # Largely adapted from grrrwaaa's oopsy #
 #############################################################
 
-component_defs = '{\
-	Switch: {\
-		typename: "daisy::Switch",\
-		pin: "a",\
-		type: "daisy::Switch::TYPE_MOMENTARY",\
-		polarity: "daisy::Switch::POLARITY_INVERTED",\
-		pull: "daisy::Switch::PULL_UP",\
-		process: "${name}.Debounce();",\
-		updaterate: "${name}.SetUpdateRate(seed.AudioCallbackRate());",\
-		mapping: [\
-			{ name: "${name}", get: "(hardware.${name}.Pressed()?1.f:0.f)", range: [0, 1] },\
-			{\
-				name: "${name}_rise",\
-				get: "(hardware.${name}.RisingEdge()?1.f:0.f)",\
-				range: [0, 1]\
-			},\
-			{\
-				name: "${name}_fall",\
-				get: "(hardware.${name}.FallingEdge()?1.f:0.f)",\
-				range: [0, 1]\
-			},\
-			{\
-				name: "${name}_seconds",\
-				get: "(hardware.${name}.TimeHeldMs()*0.001f)",\
-				range: null\
-			}\
-	  	]\
-	},\
-	Switch3: {\
-		typename: "daisy::Switch3",\
-		pin: "a,b",\
-		mapping: [\
-			{ name: "${name}", get: "(hardware.${name}.Read()*0.5f+0.5f)", range: [0, 2] }\
-		]\
-	},\
-	Encoder: {\
-		typename: "daisy::Encoder",\
-		pin: "a,b,click",\
-		process: "${name}.Debounce();",\
-		updaterate: "${name}.SetUpdateRate(seed.AudioCallbackRate());",\
-		mapping: [\
-			{\
-				name: "${name}",\
-				get: "(hardware.${name}.Increment()*0.5f+0.5f)",\
-				range: [-1, 1]\
-			},\
-			{\
-				name: "${name}_press",\
-				get: "(hardware.${name}.Pressed()?1.f:0.f)",\
-				range: [0, 1]\
-			},\
-			{\
-				name: "${name}_rise",\
-				get: "(hardware.${name}.RisingEdge()?1.f:0.f)",\
-				range: [0, 1]\
-			},\
-			{\
-				name: "${name}_fall",\
-				get: "(hardware.${name}.FallingEdge()?1.f:0.f)",\
-				range: [0, 1]\
-			},\
-			{\
-				name: "${name}_seconds",\
-				get: "(hardware.${name}.TimeHeldMs()*0.001f)",\
-				range: null\
-			}\
-		]\
-	},\
-	GateIn: {\
-		typename: "daisy::GateIn",\
-		pin: "a",\
-		mapping: [\
-			{ name: "${name}", get: "(hardware.${name}.State()?1.f:0.f)", range: [0, 1] },\
-			{ name: "${name}_trig", get: "(hardware.${name}.Trig()?1.f:0.f)", range: [0, 1] }\
-		]\
-	},\
-	AnalogControl: {\
-		typename: "daisy::AnalogControl",\
-		pin: "a",\
-		flip: false,\
-		invert: false,\
-		slew: "1.0/seed.AudioCallbackRate()",\
-		process: "${name}.Process();",\
-		updaterate: "${name}.SetSampleRate(seed.AudioCallbackRate());",\
-		mapping: [{ name: "${name}", get: "(hardware.${name}.Value())", range: [0, 1] }]\
-	},\
-	Led: {\
-		typename: "daisy::Led",\
-		pin: "a",\
-		invert: true,\
-		postprocess: "${name}.Update();",\
-		mapping: [{ name: "${name}", set: "hardware.${name}.Set($<name>);" }]\
-	},\
-	RgbLed: {\
-		typename: "daisy::RgbLed",\
-		pin: "r,g,b",\
-		invert: true,\
-		postprocess: "${name}.Update();",\
-		mapping: [\
-			{ name: "${name}_red", set: "hardware.${name}.SetRed($<name>);" },\
-			{ name: "${name}_green", set: "hardware.${name}.SetGreen($<name>);" },\
-			{ name: "${name}_blue", set: "hardware.${name}.SetBlue($<name>);" },\
-			{ name: "${name}", set: "hardware.${name}.Set(clamp(-$<name>, 0.f, 1.f), 0.f, clamp($<name>, 0.f, 1.f));" },\
-			{ name: "${name}_white", set: "hardware.${name}.Set($<name>,$<name>,$<name>);" }\
-		]\
-	},\
-	GateOut: {\
-		typename: "daisy::dsy_gpio",\
-		pin: "a",\
-		mode: "DSY_GPIO_MODE_OUTPUT_PP",\
-		pull: "DSY_GPIO_NOPULL",\
-		mapping: [\
-			{ name: "${name}", set: "dsy_gpio_write(&hardware.${name}, $<name> } 0.f);" }\
-		]\
-	},\
-	CVOuts: {\
-		typename: "daisy::DacHandle::Config",\
-		pin: "",\
-		bitdepth: "daisy::DacHandle::BitDepth::BITS_12",\
-		buff_state: "daisy::DacHandle::BufferState::ENABLED",\
-		mode: "daisy::DacHandle::Mode::POLLING",\
-		channel: "daisy::DacHandle::Channel::BOTH",\
-		mapping: [\
-			{\
-				name: "${name}1",\
-				set: "hardware.${name}.WriteValue(daisy::DacHandle::Channel::ONE, $<name> * 4095)",\
-				where: "main"\
-			},\
-			{\
-				name: "${name}2",\
-				set: "hardware.${name}.WriteValue(daisy::DacHandle::Channel::TWO, $<name> * 4095)",\
-				where: "main"\
-			}\
-		]\
-	}\
-}'
+# TODO: add an argument to make this path configurable
+json_defaults_file = "component_defaults.json"
 
+def map_helper(pair):
+	# load the default components
+	inpath = os.path.abspath(json_defaults_file)
+	infile = open(inpath, 'r').read()
+	component_defaults = json.loads(infile)
+
+	# split up the component we got
+	name = pair[0]
+	defn = pair[1]
+
+	# the default if it exists
+	component = component_defaults[defn['component']]
+	if(component):
+		# copy component defaults into the def
+		# TODO this should be recursive for object structures..
+		for k in component:
+			if not k in defn: 
+				defn[k] = component[k]
+	else:
+		raise Exception("undefined component kind: ", defn['component'])
+
+	return component
 
 def generate_target_struct(target):
-    # flesh out target components:
-    components = json.loads(target)['components']
+	# flesh out target components:
+	target = json.loads(target)
+	components = target['components']
 
-    # alphabetize by component name
-    components = sorted(components.items(), key=lambda x: x[1]['component'])
-# 	  .map((pair) => {
-# 		let [name, def] = pair;
-# 		def.name = name;
-# 		let component = component_defs[def.component];
-# 		if (component) {
-# 		  # copy component defaults into the def
-# 		  # TODO this should be recursive for object structures...
-# 		  for (let k of Object.keys(component)) {
-# 			if (def[k] == undefined) def[k] = component[k];
-# 		  }
-# 		} else {
-# 		  throw new Error("undefined component kind: " + def.component);
-# 		}
-# 		return def;
-# 	});
-# 	target.components = components;
-# 	target.name = target.name || "custom"
+	# alphabetize by component name
+	components = sorted(components.items(), key=lambda x: x[1]['component'])
+
+	components = list(map(map_helper, components))
+	target['components'] = components
+	if not 'name' in target:
+		target['name'] = 'custom'
+
+	if 'display' in target:
+		# apply defaults
+		target['display'] = {
+			'driver': "daisy::SSD130x4WireSpi128x64Driver",
+			'config': [],
+			'dim': [128, 64]
+		}
+		
+		target['defines']['OOPSY_TARGET_HAS_OLED'] = 1
+		target['defines']['OOPSY_OLED_DISPLAY_WIDTH'] = target['display']['dim'][0]
+		target['defines']['OOPSY_OLED_DISPLAY_HEIGHT'] = target['display']['dim'][1]
+
+# 	}
 
 # 	if (target.display) {
 # 		# apply defaults:
