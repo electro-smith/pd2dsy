@@ -59,29 +59,15 @@ def generate_target_struct(target):
 		target['defines']['OOPSY_OLED_DISPLAY_WIDTH'] = target['display']['dim'][0]
 		target['defines']['OOPSY_OLED_DISPLAY_HEIGHT'] = target['display']['dim'][1]
 
-# 	}
-
-# 	if (target.display) {
-# 		# apply defaults:
-# 		target.display = Object.assign({
-# 			driver: "daisy::SSD130x4WireSpi128x64Driver",
-# 			config: [],
-# 			dim: [128, 64]
-# 		}, target.display)
-# 		target.defines.OOPSY_TARGET_HAS_OLED = 1
-# 		target.defines.OOPSY_OLED_DISPLAY_WIDTH = target.display.dim[0]
-# 		target.defines.OOPSY_OLED_DISPLAY_HEIGHT = target.display.dim[1]
-# 	}
-  
-# 	return `
-# #include "daisy_seed.h"
-# ${target.display ? `#include "dev/oled_ssd130x.h"` : ""}
-# // name: ${target.name}
-# struct Daisy {
-  
-# 	void Init(bool boost = false) {
-# 		seed.Configure();
-# 		seed.Init(boost);
+	return '\
+//include \n"daisy_seed.h"\n' +\
+(target['display'] if ('display' in target) else  "") +\
+'// name: ' +\
+target['name'] +\
+'\nstruct Daisy {\n' +\
+'	void Init(bool boost = false) {\n\
+		seed.Configure();\n\
+ 		seed.Init(boost);\n'
 # 		${components.filter((e) => e.init)
 # 		.map((e) => `
 # 		${template(e.init, e)}`
@@ -172,14 +158,15 @@ def generate_target_struct(target):
 # }
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Utility for generating board support files from JSON.')
-    parser.add_argument('json_input', help='Path to json file.')
-    parser.add_argument('-o', '--output', help='Path to output to. Defaults to board_support.h', default='board_support.h')
+	parser = argparse.ArgumentParser(description='Utility for generating board support files from JSON.')
+	parser.add_argument('json_input', help='Path to json file.')
+	parser.add_argument('-o', '--output', help='Path to output to. Defaults to board_support.h', default='board_support.h')
 
-    args = parser.parse_args()
-    inpath = os.path.abspath(args.json_input)
-    outpath = os.path.abspath(args.output)
+	args = parser.parse_args()
+	inpath = os.path.abspath(args.json_input)
+	outpath = os.path.abspath(args.output)
 
-    print('Generating Board File...')
-    infile = open(inpath, 'r').read()
-    generate_target_struct(infile)
+	print('Generating Board File...')
+	infile = open(inpath, 'r').read()
+	template_code = generate_target_struct(infile)
+	print(template_code)
