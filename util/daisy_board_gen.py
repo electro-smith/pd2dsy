@@ -42,22 +42,30 @@ component_inits = {'daisy::Switch': '{name}.Init(seed.GetPin({pin}), seed.AudioC
 					'daisy::GateIn': 'dsy_gpio_pin {name}_pin = seed.GetPin({pin});\n _{name}.Init({name}_pin);',
 					'daisy::Switch3': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b});\n',
 					'daisy::Encoder': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b}), seed.GetPin({pin_click}), seed.AudioCallbackRate());\n',
+					'daisy::Led': '{name}.Init(seed.GetPin({pin}), {invert});\n${name}.Set(0.0f);\n',	
+					'daisy::RgbLed': '{name}.Init(seed.GetPin({pin_r}), seed.GetPin({pin_g}), seed.GetPin({pin_b}), {invert});\n{name}.Set(0.0f, 0.0f, 0.0f);\n',
 				}
 
 def my_map(comp):
 	init_str = component_inits[comp['typename']]
-	
-	# need these for encoder and switch3
+	# comp['i'] = str(i)
+
+	# Some of the pins are dictionaries: encoder, switch3, rgbled
 	if(isinstance(comp.get('pin', ''), dict)):
 		comp['pin_a'] = comp['pin'].get('a', '')
 		comp['pin_b'] = comp['pin'].get('b', '')
 		comp['pin_click'] = comp['pin'].get('click', '')
+		comp['pin_r'] = comp['pin'].get('r', '')
+		comp['pin_g'] = comp['pin'].get('g', '')
+		comp['pin_b'] = comp['pin'].get('b', '')
 
 	return init_str.format_map(comp)	
 
 # filter out the components we need, then map them onto the init for that part
 def map_filter_init_helper(set, key, match):
 	filtered = my_filter(set, key, match)
+	# if(match == 'daisy::RgbLed'):
+		# exit(range(len(list(filtered))))
 	return "".join(map(my_map, filtered))
 
 def generate_target_struct(target):
@@ -68,8 +76,6 @@ def generate_target_struct(target):
 	# alphabetize by component name
 	components = sorted(components.items(), key=lambda x: x[1]['component'])
 	components = list(map(map_helper, components))
-
-	print(components, "\n\n")
 
 	target['components'] = components
 	if not 'name' in target:
@@ -106,6 +112,9 @@ def generate_target_struct(target):
 	replacements['analogctrlone'] = "".join(map(lambda x, i: 'cfg[' + str(i) + '].InitSingle(seed.GetPin(' + str(x['pin']) + '));\n', replacements['analogctrlone'], range(len(list(replacements)))))
 	replacements['analogctrltwo'] = my_filter(components, 'typename', 'daisy::AnalogControl')
 	replacements['analogctrltwo'] = "".join(map(lambda x, i: x['name'] + '.Init(seed.adc.GetPtr(' + str(i) + '), seed.AudioCallbackRate(), ' + str(x['flip']).lower() + ', ' + str(x['invert']).lower() + '});\n', replacements['analogctrltwo'], range(len(list(replacements)))))
+
+	replacements['led'] = map_filter_init_helper(components, 'typename', 'daisy::Led')
+	replacements['rgbled'] = map_filter_init_helper(components, 'typename', 'daisy::RgbLed')
 
 	return template.format_map(replacements)
 

@@ -14,3 +14,5 @@ struct Daisy {{
 		{analogctrlone}
 		seed.adc.Init(cfg, ANALOG_COUNT);
 		{analogctrltwo}
+		{led}
+		{rgbled}
