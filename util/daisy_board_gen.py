@@ -42,7 +42,7 @@ component_inits = {'daisy::Switch': '{name}.Init(seed.GetPin({pin}), seed.AudioC
 					'daisy::GateIn': 'dsy_gpio_pin {name}_pin = seed.GetPin({pin});\n{name}.Init({name}_pin);',
 					'daisy::Switch3': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b});\n',
 					'daisy::Encoder': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b}), seed.GetPin({pin_click}), seed.AudioCallbackRate());\n',
-					'daisy::Led': '{name}.Init(seed.GetPin({pin}), {invert});\n${name}.Set(0.0f);\n',	
+					'daisy::Led': '{name}.Init(seed.GetPin({pin}), {invert});\n{name}.Set(0.0f);\n',	
 					'daisy::RgbLed': '{name}.Init(seed.GetPin({pin_r}), seed.GetPin({pin_g}), seed.GetPin({pin_b}), {invert});\n{name}.Set(0.0f, 0.0f, 0.0f);\n',
 					'dsy_gpio': '{name}.pin  = seed.GetPin({pin});\n{name}.mode = {mode};\n{name}.pull = ${pull};\ndsy_gpio_init(&{name});\n',
 					'daisy::DacHandle::Config': '{name}.bitdepth   = {bitdepth};\n{name}.buff_state = {buff_state};\n{name}.mode       = {mode};\n\
@@ -62,6 +62,11 @@ def my_map(comp):
 		comp['pin_r'] = comp['pin'].get('r', '')
 		comp['pin_g'] = comp['pin'].get('g', '')
 		comp['pin_b'] = comp['pin'].get('b', '')
+
+	# force booleans to lowercase strings
+	for key,val in comp.items():
+		if (isinstance(val, bool)):
+			comp[key] = str(val).lower()
 
 	return init_str.format_map(comp)	
 
