@@ -98,7 +98,7 @@ def generate_target_struct(target):
 	template = open(template_path, 'r').read()
 
 	replacements = {}
-	replacements['display_conditional'] = (target['display'] if ('display' in target) else  "")
+	replacements['display_conditional'] = ('#include "dev/oled_ssd130x.h"' if ('display' in target) else  "")
 	replacements['target_name'] = target['name']
 	replacements['init'] = "".join(map(lambda x: x['init'], filter(lambda x: x.get('init', ''), components)))
 
