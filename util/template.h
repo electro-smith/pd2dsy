@@ -8,3 +8,4 @@ struct Daisy {{
         {init}
         {switch}
         {switch3}
+        {gatein}

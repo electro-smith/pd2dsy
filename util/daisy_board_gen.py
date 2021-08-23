@@ -12,6 +12,8 @@ import json
 json_defaults_file = "component_defaults.json"
 template_path = 'template.h'
 
+## TODO: refactor these cray function names
+
 def map_helper(pair):
 	# load the default components
 	inpath = os.path.abspath(json_defaults_file)
@@ -35,6 +37,21 @@ def map_helper(pair):
 
 def my_filter(set, key, match):
 	return filter(lambda x: x.get(key, '') == match, set)
+
+component_inits = {'daisy::Switch': '{name}.Init(seed.GetPin({pin}), seed.AudioCallbackRate(), {type}, {polarity}, {pull});\n',
+					'daisy::GateIn': 'dsy_gpio_pin {name}_pin = seed.GetPin({pin});\n _{name}.Init({name}_pin);',
+
+				}
+
+def my_map(comp):
+	init_str = component_inits[comp['typename']]
+	return init_str.format_map(comp)
+
+
+# filter out the components we need, then map them onto the init for that part
+def map_filter_init_helper(set, key, match):
+	filtered = my_filter(set, key, match)
+	return "".join(map(my_map, filtered))
 
 def generate_target_struct(target):
 	# flesh out target components:
@@ -69,9 +86,13 @@ def generate_target_struct(target):
 	replacements['display_conditional'] = (target['display'] if ('display' in target) else  "")
 	replacements['target_name'] = target['name']
 	replacements['init'] = "".join(map(lambda x: x['init'], filter(lambda x: x.get('init', ''), components)))
-	# these lines looks crazy but they work, TODO: make them less crazy
-	replacements['switch'] = "".join(map(lambda x: x['name'] + '.Init(seed.GetPin(' + str(x['pin']) + '), seed.AudioCallbackRate(), ' + x['type'] + ', ' + x['polarity'] + ', ' + x['pull'] + ');\n', my_filter(components, 'typename', 'daisy::Switch')))
+
+	replacements['switch'] = map_filter_init_helper(components, 'typename', 'daisy::Switch')
+	replacements['gatein'] = map_filter_init_helper(components, 'typename', 'daisy::GateIn')
+
+	# this one is tricky to replace because of ['pin']['a']
 	replacements['switch3'] = "".join(map(lambda x: x['name'] + '.Init(seed.GetPin(' + str(x['pin']['a']) + '), ' + 'seed.GetPin(' + str(x['pin']['b']) + ');\n', my_filter(components, 'typename', 'daisy::Switch3')))
+	
 	return template.format_map(replacements)
 
 if __name__ == "__main__":
