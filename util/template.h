@@ -10,3 +10,7 @@ struct Daisy {{
         {switch3}
         {gatein}
 		{encoder}
+		{analogcount}
+		{analogctrlone}
+		seed.adc.Init(cfg, ANALOG_COUNT);
+		{analogctrltwo}

@@ -99,6 +99,13 @@ def generate_target_struct(target):
 	replacements['encoder'] = map_filter_init_helper(components, 'typename', 'daisy::Encoder')
 	replacements['switch3'] = map_filter_init_helper(components, 'typename', 'daisy::Switch3')
 	replacements['encoder'] = map_filter_init_helper(components, 'typename', 'daisy::Encoder')
+	replacements['analogcount'] = 'static const int ANALOG_COUNT = ' + str(len(list(my_filter(components, 'typename', 'daisy::AnalogControl')))) + ';'
+
+	# these got crazy
+	replacements['analogctrlone'] = my_filter(components, 'typename', 'daisy::AnalogControl')
+	replacements['analogctrlone'] = "".join(map(lambda x, i: 'cfg[' + str(i) + '].InitSingle(seed.GetPin(' + str(x['pin']) + '));\n', replacements['analogctrlone'], range(len(list(replacements)))))
+	replacements['analogctrltwo'] = my_filter(components, 'typename', 'daisy::AnalogControl')
+	replacements['analogctrltwo'] = "".join(map(lambda x, i: x['name'] + '.Init(seed.adc.GetPtr(' + str(i) + '), seed.AudioCallbackRate(), ' + str(x['flip']).lower() + ', ' + str(x['invert']).lower() + '});\n', replacements['analogctrltwo'], range(len(list(replacements)))))
 
 	return template.format_map(replacements)
 
