@@ -47,6 +47,7 @@ component_inits = {'daisy::Switch': '{name}.Init(seed.GetPin({pin}), seed.AudioC
 					'dsy_gpio': '{name}.pin  = seed.GetPin({pin});\n{name}.mode = {mode};\n{name}.pull = ${pull};\ndsy_gpio_init(&{name});\n',
 					'daisy::DacHandle::Config': '{name}.bitdepth   = {bitdepth};\n{name}.buff_state = {buff_state};\n{name}.mode       = {mode};\n\
 					{name}.chn        = {channel};\nseed.dac.Init({name});\nseed.dac.WriteValue({channel}, 0);\n',
+					
 				}
 
 def my_map(comp):
@@ -67,8 +68,6 @@ def my_map(comp):
 # filter out the components we need, then map them onto the init for that part
 def map_filter_init_helper(set, key, match):
 	filtered = my_filter(set, key, match)
-	# if(match == 'daisy::RgbLed'):
-		# exit(range(len(list(filtered))))
 	return "".join(map(my_map, filtered))
 
 def generate_target_struct(target):
@@ -120,6 +119,14 @@ def generate_target_struct(target):
 	replacements['rgbled'] = map_filter_init_helper(components, 'typename', 'daisy::RgbLed')
 	replacements['gpio'] = map_filter_init_helper(components, 'typename', 'daisy_gpio')
 	replacements['dachandle'] = map_filter_init_helper(components, 'typename', 'daisy::DacHandle::Config')
+	
+	
+	replacements['display'] = '// no display' if not 'display' in target else \
+		'daisy::OledDisplay<' + target['display']['driver'] + '>::Config display_config;\n' +\
+		'display_config.driver_config.transport_config.Defaults();\n' +\
+		"".join(map(lambda x: x, target['display'].get('config', {}))) +\
+		'display.Init(display_config);\n'
+
 
 	return template.format_map(replacements)
 

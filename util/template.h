@@ -18,3 +18,5 @@ struct Daisy {{
 		{rgbled}
 		{gpio}
 		{dachandle}
+		{display}
+	}}
