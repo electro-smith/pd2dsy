@@ -44,6 +44,9 @@ component_inits = {'daisy::Switch': '{name}.Init(seed.GetPin({pin}), seed.AudioC
 					'daisy::Encoder': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b}), seed.GetPin({pin_click}), seed.AudioCallbackRate());\n',
 					'daisy::Led': '{name}.Init(seed.GetPin({pin}), {invert});\n${name}.Set(0.0f);\n',	
 					'daisy::RgbLed': '{name}.Init(seed.GetPin({pin_r}), seed.GetPin({pin_g}), seed.GetPin({pin_b}), {invert});\n{name}.Set(0.0f, 0.0f, 0.0f);\n',
+					'dsy_gpio': '{name}.pin  = seed.GetPin({pin});\n{name}.mode = {mode};\n{name}.pull = ${pull};\ndsy_gpio_init(&{name});\n',
+					'daisy::DacHandle::Config': '{name}.bitdepth   = {bitdepth};\n{name}.buff_state = {buff_state};\n{name}.mode       = {mode};\n\
+					{name}.chn        = {channel};\nseed.dac.Init({name});\nseed.dac.WriteValue({channel}, 0);\n',
 				}
 
 def my_map(comp):
@@ -115,6 +118,8 @@ def generate_target_struct(target):
 
 	replacements['led'] = map_filter_init_helper(components, 'typename', 'daisy::Led')
 	replacements['rgbled'] = map_filter_init_helper(components, 'typename', 'daisy::RgbLed')
+	replacements['gpio'] = map_filter_init_helper(components, 'typename', 'daisy_gpio')
+	replacements['dachandle'] = map_filter_init_helper(components, 'typename', 'daisy::DacHandle::Config')
 
 	return template.format_map(replacements)
 

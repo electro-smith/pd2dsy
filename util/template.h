@@ -16,3 +16,5 @@ struct Daisy {{
 		{analogctrltwo}
 		{led}
 		{rgbled}
+		{gpio}
+		{dachandle}
