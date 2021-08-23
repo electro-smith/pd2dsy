@@ -39,7 +39,7 @@ def my_filter(set, key, match):
 	return filter(lambda x: x.get(key, '') == match, set)
 
 component_inits = {'daisy::Switch': '{name}.Init(seed.GetPin({pin}), seed.AudioCallbackRate(), {type}, {polarity}, {pull});\n',
-					'daisy::GateIn': 'dsy_gpio_pin {name}_pin = seed.GetPin({pin});\n _{name}.Init({name}_pin);',
+					'daisy::GateIn': 'dsy_gpio_pin {name}_pin = seed.GetPin({pin});\n{name}.Init({name}_pin);',
 					'daisy::Switch3': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b});\n',
 					'daisy::Encoder': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b}), seed.GetPin({pin_click}), seed.AudioCallbackRate());\n',
 					'daisy::Led': '{name}.Init(seed.GetPin({pin}), {invert});\n${name}.Set(0.0f);\n',	
