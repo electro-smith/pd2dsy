@@ -9,3 +9,4 @@ struct Daisy {{
         {switch}
         {switch3}
         {gatein}
+		{encoder}

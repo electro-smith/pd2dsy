@@ -40,13 +40,20 @@ def my_filter(set, key, match):
 
 component_inits = {'daisy::Switch': '{name}.Init(seed.GetPin({pin}), seed.AudioCallbackRate(), {type}, {polarity}, {pull});\n',
 					'daisy::GateIn': 'dsy_gpio_pin {name}_pin = seed.GetPin({pin});\n _{name}.Init({name}_pin);',
-
+					'daisy::Switch3': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b});\n',
+					'daisy::Encoder': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b}), seed.GetPin({pin_click}), seed.AudioCallbackRate());\n',
 				}
 
 def my_map(comp):
 	init_str = component_inits[comp['typename']]
-	return init_str.format_map(comp)
+	
+	# need these for encoder and switch3
+	if(isinstance(comp.get('pin', ''), dict)):
+		comp['pin_a'] = comp['pin'].get('a', '')
+		comp['pin_b'] = comp['pin'].get('b', '')
+		comp['pin_click'] = comp['pin'].get('click', '')
 
+	return init_str.format_map(comp)	
 
 # filter out the components we need, then map them onto the init for that part
 def map_filter_init_helper(set, key, match):
@@ -89,10 +96,10 @@ def generate_target_struct(target):
 
 	replacements['switch'] = map_filter_init_helper(components, 'typename', 'daisy::Switch')
 	replacements['gatein'] = map_filter_init_helper(components, 'typename', 'daisy::GateIn')
+	replacements['encoder'] = map_filter_init_helper(components, 'typename', 'daisy::Encoder')
+	replacements['switch3'] = map_filter_init_helper(components, 'typename', 'daisy::Switch3')
+	replacements['encoder'] = map_filter_init_helper(components, 'typename', 'daisy::Encoder')
 
-	# this one is tricky to replace because of ['pin']['a']
-	replacements['switch3'] = "".join(map(lambda x: x['name'] + '.Init(seed.GetPin(' + str(x['pin']['a']) + '), ' + 'seed.GetPin(' + str(x['pin']['b']) + ');\n', my_filter(components, 'typename', 'daisy::Switch3')))
-	
 	return template.format_map(replacements)
 
 if __name__ == "__main__":
