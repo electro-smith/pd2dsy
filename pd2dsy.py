@@ -38,7 +38,8 @@ filename = ''
 board = ''
 linker = ''
 bootloader = ''
-big = False
+ram_type = ''
+rom_type = ''
 libdaisy_depth = ''
 
 def searchReplace(file, find, replace):
@@ -92,7 +93,7 @@ def generateCpp():
     searchReplace(paths["Template"], replaceComments["Globals"], 'Heavy_' + basename + ' hv(SAMPLE_RATE);')
 
     #Bootloader debug
-    if big:
+    if rom_type == 'size':
         searchReplace(paths["Template"], replaceComments["Debug"], '#ifdef DEBUG\n    asm("bkpt 255");\n    #endif\n')
         
     #Preinit
@@ -172,17 +173,31 @@ def main():
     parser.add_argument('-b',  '--board', help='hardware platform for generated output.', default='seed')
     parser.add_argument('-p',  '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
     parser.add_argument('-c',  '--hvcc_cmd', type=str, help="hvcc command.", default='python hvcc/hvcc.py')
-    parser.add_argument('-d', type=str, help="set the parent directory of the output.", default='.')
-    parser.add_argument('--big', action='store_true', help='execute program from SRAM (provides 4 times more space).')
-    parser.add_argument('--sdram', action='store_true', help='set default bss section to SDRAM (useful for large data buffers).')
+    parser.add_argument('-d', '--directory', type=str, help="set the parent directory of the output.", default='.')
+    parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
+    parser.add_argument('--rom', type=str, help='follow with "speed" or "size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
     parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=2)
 
     args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
     search_paths = args.search_paths or []
 
-    global big
-    big = args.big
+    global ram_type
+    ram_type = args.ram
+
+    if ram_type not in ('size', 'speed'):
+        print('Error: unknown ram option "' + ram_type + '"')
+        halt()
+
+    global rom_type
+    rom_type = args.rom
+
+    if rom_type not in ('size', 'speed'):
+        print('Error: unknown rom option "' + rom_type + '"')
+        halt()
+
+    if rom_type == 'size':
+        print('\n\033[0;32mNote: a rom type of "size" means you\'ll need the daisy bootloader to run your project.\033[0m')
 
     global libdaisy_depth
     libdaisy_depth = "../" * args.libdaisy_depth
@@ -190,7 +205,7 @@ def main():
     global basename
     basename = os.path.basename(inpath).split('.')[0]
 
-    parent = args.d
+    parent = args.directory
     output = os.path.join(parent, basename)
 
     global board
@@ -231,10 +246,10 @@ def main():
     global linker
     linker_var = 'LDSCRIPT = '
     linker_file = None
-    if args.big:
-        linker = linker_var + 'sram_linker_sdram.lds' if args.sdram else linker_var + 'sram_linker.lds'
-        linker_file = 'util/sram_linker_sdram.lds' if args.sdram else 'util/sram_linker.lds'
-    elif args.sdram:
+    if rom_type == 'size':
+        linker = linker_var + 'sram_linker_sdram.lds' if ram_type == 'size' else linker_var + 'sram_linker.lds'
+        linker_file = 'util/sram_linker_sdram.lds' if ram_type == 'size' else 'util/sram_linker.lds'
+    elif ram_type == 'size':
         linker = linker_var + 'default_linker_sdram.lds'
         linker_file = 'util/default_linker_sdram.lds'
 
