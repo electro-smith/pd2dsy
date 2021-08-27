@@ -75,7 +75,7 @@ After you've made your patch in puredata, you can turn it into cpp by running th
 cd into the directory the script creates. You can then run make, and make program-dfu to flash your board just like with daisysp.
 
 **For now, the script generates leaves the path to libdaisy as `../../libdaisy`. Which works if the generated folder is placed within the examples folder.
-Otherwise, the Makefile should be edited to point to a valid libdaisy repository.**
+Otherwise, the Makefile should be edited or the `--libdaisy-depth` option should be used to point to a valid libdaisy repository.**
 
 ## How It Works
 
