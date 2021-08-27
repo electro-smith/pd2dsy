@@ -114,7 +114,7 @@ def generateCpp():
     
     #Debounce
     if (board != "seed"):
-        searchReplace(paths["Template"], replaceComments["Debounce"], 'hardware->DebounceControls();\nhardware->UpdateAnalogControls();')
+        searchReplace(paths["Template"], replaceComments["Debounce"], 'hardware->ProcessAllControls();')
 
     #Controls
     if(board == "seed"):
