@@ -197,7 +197,7 @@ def main():
         halt()
 
     if rom_type == 'size':
-        print('\n\033[0;32mNote: a rom type of "size" means you\'ll need the daisy bootloader to run your project.\033[0m')
+        print('\n\033[0;32mNote: a rom type of "size" means you\'ll be running your project with the provided bootloader.\033[0m')
 
     global libdaisy_depth
     libdaisy_depth = "../" * args.libdaisy_depth
@@ -285,4 +285,8 @@ def main():
         replaceFunctions[i]()
     
 if __name__ == "__main__":
+    # Forcing python 2 compliance
+    if sys.version_info.major != 2:
+        print("\033[0;31mpd2dsy requires python 2 (refer to the README for a setup guide)\033[0m")
+        sys.exit(1)
     main()
