@@ -175,7 +175,7 @@ def main():
     parser.add_argument('-c',  '--hvcc_cmd', type=str, help="hvcc command.", default='python hvcc/hvcc.py')
     parser.add_argument('-d', '--directory', type=str, help="set the parent directory of the output.", default='.')
     parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
-    parser.add_argument('--rom', type=str, help='follow with "speed" or "size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
+    parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
     parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=2)
 
     args = parser.parse_args()
@@ -192,12 +192,12 @@ def main():
     global rom_type
     rom_type = args.rom
 
-    if rom_type not in ('size', 'speed'):
+    if rom_type not in ('size', 'speed', 'double_size'):
         print('Error: unknown rom option "' + rom_type + '"')
         halt()
 
-    if rom_type == 'size':
-        print('\n\033[0;32mNote: a rom type of "size" means you\'ll be running your project with the provided bootloader.\033[0m')
+    if rom_type in ('size', 'double_size'):
+        print('\n\033[0;32mNote: a rom type of "' + rom_type + '" means you\'ll be running your project with the provided bootloader.\033[0m')
 
     global libdaisy_depth
     libdaisy_depth = "../" * args.libdaisy_depth
@@ -246,7 +246,10 @@ def main():
     global linker
     linker_var = 'LDSCRIPT = '
     linker_file = None
-    if rom_type == 'size':
+    if rom_type == 'double_size':
+        linker = linker_var + 'qspi_linker_sdram.lds' if ram_type == 'size' else linker_var + 'qspi_linker.lds'
+        linker_file = 'util/qspi_linker_sdram.lds' if ram_type == 'size' else 'util/qspi_linker.lds'
+    elif rom_type == 'size':
         linker = linker_var + 'sram_linker_sdram.lds' if ram_type == 'size' else linker_var + 'sram_linker.lds'
         linker_file = 'util/sram_linker_sdram.lds' if ram_type == 'size' else 'util/sram_linker.lds'
     elif ram_type == 'size':
@@ -259,11 +262,14 @@ def main():
     # Get name of linker and copy to project
     # WARNING -- this is a simple search, make sure nothing else has the name 'bootloader' in it
     global bootloader
-    for file in os.listdir(os.path.abspath('util')):
-        if 'bootloader' in file:
-            bootloader = 'BOOTLOADER = ' + file
-            shutil.copy(os.path.abspath(os.path.join('util', file)), os.path.abspath(output))
-            break
+    if rom_type in ('size', 'double_size'):
+        for file in os.listdir(os.path.abspath('util')):
+            if 'bootloader' in file:
+                bootloader = 'BOOTLOADER = ' + file + '\nC_DEFS += -DBOOT_VOLATILE'
+                shutil.copy(os.path.abspath(os.path.join('util', file)), os.path.abspath(output))
+                break
+    else:
+        bootloader = ''
 
     #template filename
     global filename
