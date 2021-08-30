@@ -165,4 +165,4 @@ if __name__ == "__main__":
 	print('Generating Board File...')
 	infile = open(inpath, 'r').read()
 	template_code = generate_target_struct(infile)
-	print(template_code)
+	open(outpath, 'w').write(template_code)
