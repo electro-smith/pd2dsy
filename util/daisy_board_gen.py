@@ -45,6 +45,15 @@ def filter_map_init(set, key, match):
 	filtered = filter_match(set, key, match)
 	return "\n\t\t".join(map(lambda x: x['map_init'].format_map(x), filtered))
 
+def map_helper(item, idx):
+	item['i'] = idx
+	return item
+
+def filter_map_ctrl(set, key, match, init_key):
+	set = filter_match(set, key, match)
+	set = map(lambda x, i: x | {'i': i}, set, range(1000))
+	return "\n\t\t".join(map(lambda x: x[init_key].format_map(x), set))
+
 # filter out the components with a certain field, then fill in the template
 def filter_map_template(set, name):
 	filtered = filter_has(set, name)
@@ -116,11 +125,8 @@ def generate_target_struct(target):
 	replacements['encoder'] = filter_map_init(components, 'typename', 'daisy::Encoder')
 	replacements['analogcount'] = 'static const int ANALOG_COUNT = ' + str(len(list(filter_match(components, 'typename', 'daisy::AnalogControl')))) + ';'
 
-	# these got crazy
-	replacements['analogctrlone'] = filter_match(components, 'typename', 'daisy::AnalogControl')
-	replacements['analogctrlone'] = "\n\t\t".join(map(lambda x, i: 'cfg[' + str(i) + '].InitSingle(seed.GetPin(' + str(x['pin']) + '));\n', replacements['analogctrlone'], range(len(list(replacements)))))
-	replacements['analogctrltwo'] = filter_match(components, 'typename', 'daisy::AnalogControl')
-	replacements['analogctrltwo'] = "\n\t\t".join(map(lambda x, i: x['name'] + '.Init(seed.adc.GetPtr(' + str(i) + '), seed.AudioCallbackRate(), ' + str(x['flip']).lower() + ', ' + str(x['invert']).lower() + '});\n', replacements['analogctrltwo'], range(len(list(replacements)))))
+	replacements['init_single'] = filter_map_ctrl(components, 'typename', 'daisy::AnalogControl', 'init_single')
+	replacements['ctrl_init'] = filter_map_ctrl(components, 'typename', 'daisy::AnalogControl', 'map_init')	
 
 	replacements['led'] = filter_map_init(components, 'typename', 'daisy::Led')
 	replacements['rgbled'] = filter_map_init(components, 'typename', 'daisy::RgbLed')

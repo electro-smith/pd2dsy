@@ -11,9 +11,9 @@ struct Daisy {{
         {gatein}
 		{encoder}
 		{analogcount}
-		{analogctrlone}
+		{init_single}
 		seed.adc.Init(cfg, ANALOG_COUNT);
-		{analogctrltwo}
+		{ctrl_init}
 		{led}
 		{rgbled}
 		{gateout}

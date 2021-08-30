@@ -79,6 +79,8 @@
 		]
 	},
 	"AnalogControl": {
+		"init_single": "cfg[{i}].InitSingle(seed.GetPin({pin}));",
+		"map_init": "{name}.Init(seed.adc.GetPtr({i}), seed.AudioCallbackRate(), {flip}, {invert});",
 		"typename": "daisy::AnalogControl",
 		"pin": "a",
 		"flip": false,
