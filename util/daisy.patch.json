@@ -1,0 +1,12 @@
+{
+	"name":"versio",
+	"defines": {},
+	"display": {},
+    "components": {
+        "led": {
+            "component": "GateOut",
+            "invert": false,
+            "pin": 100
+        }
+    }
+}

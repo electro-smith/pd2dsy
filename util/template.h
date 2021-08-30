@@ -16,7 +16,15 @@ struct Daisy {{
 		{analogctrltwo}
 		{led}
 		{rgbled}
-		{gpio}
+		{gateout}
 		{dachandle}
 		{display}
 	}}
+
+void ProcessAllControls() {{
+	{process}
+}}
+
+void PostProcess() {{
+	{postprocess}
+}}

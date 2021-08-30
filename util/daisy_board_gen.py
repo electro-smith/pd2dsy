@@ -38,6 +38,10 @@ def map_helper(pair):
 def my_filter(set, key, match):
 	return filter(lambda x: x.get(key, '') == match, set)
 
+def filter_has(set, key):
+	return filter(lambda x: x.get(key, '') != '', set)
+
+
 component_inits = {'daisy::Switch': '{name}.Init(seed.GetPin({pin}), seed.AudioCallbackRate(), {type}, {polarity}, {pull});\n',
 					'daisy::GateIn': 'dsy_gpio_pin {name}_pin = seed.GetPin({pin});\n{name}.Init({name}_pin);',
 					'daisy::Switch3': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b});\n',
@@ -74,6 +78,10 @@ def my_map(comp):
 def map_filter_init_helper(set, key, match):
 	filtered = my_filter(set, key, match)
 	return "".join(map(my_map, filtered))
+
+def filter_map_template(set, name):
+	return "".join(map(lambda x: x[name].format_map(x) + '\n', filter_has(set, name)))
+
 
 def generate_target_struct(target):
 	# flesh out target components:
@@ -122,7 +130,7 @@ def generate_target_struct(target):
 
 	replacements['led'] = map_filter_init_helper(components, 'typename', 'daisy::Led')
 	replacements['rgbled'] = map_filter_init_helper(components, 'typename', 'daisy::RgbLed')
-	replacements['gpio'] = map_filter_init_helper(components, 'typename', 'daisy_gpio')
+	replacements['gateout'] = map_filter_init_helper(components, 'typename', 'daisy_gpio')
 	replacements['dachandle'] = map_filter_init_helper(components, 'typename', 'daisy::DacHandle::Config')
 	
 	
@@ -132,6 +140,11 @@ def generate_target_struct(target):
 		"".join(map(lambda x: x, target['display'].get('config', {}))) +\
 		'display.Init(display_config);\n'
 
+	replacements['process'] = filter_map_template(components, 'process')
+	# There's also this after {process}. I don't see any meta in the defaults json at this time. Is this needed?
+	# ${components.filter((e) => e.meta).map((e) => e.meta.map(m=>`${template(m, e)}`).join("")).join("")}
+
+	replacements['postprocess'] = filter_map_template(components, 'postprocess')
 
 	return template.format_map(replacements)
 
