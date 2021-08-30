@@ -28,7 +28,7 @@
 	  	]
 	},
 	"Switch3": {
-		"map_init": "{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b});",
+		"map_init": "{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b}));",
 		"typename": "daisy::Switch3",
 		"pin": "a,b",
 		"mapping": [
@@ -113,7 +113,7 @@
 		]
 	},
 	"GateOut": {
-		"map_init": "{name}.pin  = seed.GetPin({pin});\n\t\t{name}.mode = {mode};\n\t\t{name}.pull = ${pull};\n\t\tdsy_gpio_init(&{name});",
+		"map_init": "{name}.pin  = seed.GetPin({pin});\n\t\t{name}.mode = {mode};\n\t\t{name}.pull = {pull};\n\t\tdsy_gpio_init(&{name});",
 		"typename": "daisy::dsy_gpio",
 		"pin": "a",
 		"mode": "DSY_GPIO_MODE_OUTPUT_PP",

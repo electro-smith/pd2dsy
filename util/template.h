@@ -5,19 +5,33 @@ struct Daisy {{
 	void Init(bool boost = false) {{
 		seed.Configure();
  		seed.Init(boost);
-        {init}
-        {switch}
-        {switch3}
-        {gatein}
+        
+		{init}
+        
+		{switch}
+        
+		{switch3}
+        
+		{gatein}
+		
 		{encoder}
+		
 		{analogcount}
+		
 		{init_single}
+		
 		seed.adc.Init(cfg, ANALOG_COUNT);
+		
 		{ctrl_init}
+		
 		{led}
+		
 		{rgbled}
+		
 		{gateout}
+		
 		{dachandle}
+		
 		{display}
 	}}
 
@@ -49,6 +63,7 @@ struct Daisy {{
 	daisy::DaisySeed seed;
 	
 	{comps}
+	
 	{dispdec}
 	
 	int menu_click = 0, menu_hold = 0, menu_rotate = 0;

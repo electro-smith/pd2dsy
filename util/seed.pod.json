@@ -3,6 +3,13 @@
 	"defines": {
 		"OOPSY_TARGET_HAS_MIDI_INPUT": 1
 	},
+	"display": {
+		"config": {
+			"thing1": "conf1;",
+			"thing2": "conf2;",
+			"thing3": "conf3;"
+		}
+	},
 	"components": {
 		"sw1": {
 			"init": "test",
@@ -33,7 +40,29 @@
 		"led2": {
 			"component": "RgbLed",
 			"pin": {"r":17, "g":24, "b":23 }
+		},
+		"gateout": {
+			"component": "GateOut",
+			"pin": 1998,
+			"display": "display code for gateout;"
+		},
+		"led3": {
+			"component": "Led",
+			"pin": 100,
+			"display": "display code for led3;"
+		},
+		"cvout": {
+			"component": "CVOuts"
+		},
+		"gatein": {
+			"component": "GateIn",
+			"pin": 12
+		},
+		"sw3": {
+			"component": "Switch3",
+			"pin": {"a": 1, "b": 2}
 		}
+
 	},
 	"aliases": {
 		"switch": "sw1",

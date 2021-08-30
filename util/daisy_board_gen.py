@@ -43,11 +43,7 @@ def filter_has(set, key):
 # filter out the components we need, then map them onto the init for that part
 def filter_map_init(set, key, match):
 	filtered = filter_match(set, key, match)
-	return "\n\t\t".join(map(lambda x: x['map_init'].format_map(x), filtered))
-
-def map_helper(item, idx):
-	item['i'] = idx
-	return item
+	return "\n\t\t".join(map(lambda x: x['map_init'].format_map(x), filtered)) 
 
 def filter_map_ctrl(set, key, match, init_key):
 	set = filter_match(set, key, match)
@@ -109,8 +105,6 @@ def generate_target_struct(target):
 		target['defines']['OOPSY_OLED_DISPLAY_WIDTH'] = target['display']['dim'][0]
 		target['defines']['OOPSY_OLED_DISPLAY_HEIGHT'] = target['display']['dim'][1]
 
-
-
 	template = open(template_path, 'r').read()
 
 	replacements = {}
@@ -130,13 +124,12 @@ def generate_target_struct(target):
 
 	replacements['led'] = filter_map_init(components, 'typename', 'daisy::Led')
 	replacements['rgbled'] = filter_map_init(components, 'typename', 'daisy::RgbLed')
-	replacements['gateout'] = filter_map_init(components, 'typename', 'daisy_gpio')
+	replacements['gateout'] = filter_map_init(components, 'typename', 'daisy::dsy_gpio')
 	replacements['dachandle'] = filter_map_init(components, 'typename', 'daisy::DacHandle::Config')
 	
-	
 	replacements['display'] = '// no display' if not 'display' in target else \
-		'daisy::OledDisplay<' + target['display']['driver'] + '>::Config display_config;\n' +\
-		'display_config.driver_config.transport_config.Defaults();\n' +\
+		'daisy::OledDisplay<' + target['display']['driver'] + '>::Config display_config;\n\t\t' +\
+		'display_config.driver_config.transport_config.Defaults();\n\t\t' +\
 		"".join(map(lambda x: x, target['display'].get('config', {}))) +\
 		'display.Init(display_config);\n'
 

@@ -1,7 +1,7 @@
 {
 	"name":"versio",
 	"defines": {},
-	"display": {},
+	"display": {"config": "test;"},
     "components": {
         "led": {
             "component": "GateOut",
