@@ -43,9 +43,9 @@ def filter_has(set, key):
 # filter out the components we need, then map them onto the init for that part
 def filter_map_init(set, key, match):
 	filtered = filter_match(set, key, match)
-	return ";\n\t\t".join(map(lambda x: x['map_init'].format_map(x), filtered))
+	return "\n\t\t".join(map(lambda x: x['map_init'].format_map(x), filtered))
 
-#filter out the components with a certain field, then fill in the template
+# filter out the components with a certain field, then fill in the template
 def filter_map_template(set, name):
 	filtered = filter_has(set, name)
 	return "\n\t\t".join(map(lambda x: x[name].format_map(x), filtered))
@@ -107,7 +107,7 @@ def generate_target_struct(target):
 	replacements = {}
 	replacements['display_conditional'] = ('#include "dev/oled_ssd130x.h"' if ('display' in target) else  "")
 	replacements['target_name'] = target['name']
-	replacements['init'] = "\n\t\t".join(map(lambda x: x['init'], filter(lambda x: x.get('init', ''), components)))
+	replacements['init'] = filter_map_template(components, 'init')
 
 	replacements['switch'] = filter_map_init(components, 'typename', 'daisy::Switch')
 	replacements['gatein'] = filter_map_init(components, 'typename', 'daisy::GateIn')
@@ -142,7 +142,7 @@ def generate_target_struct(target):
 	replacements['displayprocess'] = filter_map_template(components, 'display')
 	replacements['hidupdaterates'] = filter_map_template(components, 'updaterate')
 
-	replacements['comps'] = ";\n\t".join(map(lambda x: x['typename'] + ' ' + x['name'], components))
+	replacements['comps'] = ";\n\t".join(map(lambda x: x['typename'] + ' ' + x['name'], components)) + ';'
 	replacements['dispdec'] = ('daisy::OledDisplay<' + target['display']['driver'] + '> display;') if ('display' in target) else  "// no display"
 
 	template = template.format_map(replacements)

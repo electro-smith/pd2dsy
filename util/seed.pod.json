@@ -5,6 +5,7 @@
 	},
 	"components": {
 		"sw1": {
+			"init": "test",
 			"component": "Switch",
 			"pin": 27
 		},
@@ -17,6 +18,7 @@
 			"pin": 21
 		},
 		"knob2": {
+			"init": "test",
 			"component": "AnalogControl",
 			"pin": 15
 		},
