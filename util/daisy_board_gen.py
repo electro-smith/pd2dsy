@@ -12,9 +12,8 @@ import json
 json_defaults_file = "component_defaults.json"
 template_path = 'template.h'
 
-## TODO: refactor these cray function names
-
-def map_helper(pair):
+# helper for loading and processing the defaults, component list, etc
+def map_load(pair):
 	# load the default components
 	inpath = os.path.abspath(json_defaults_file)
 	infile = open(inpath, 'r').read()
@@ -41,24 +40,15 @@ def filter_match(set, key, match):
 def filter_has(set, key):
 	return filter(lambda x: x.get(key, '') != '', set)
 
-def my_map(comp):
-	init_str = comp['map_init']
-
-	# force booleans to lowercase strings
-	for key,val in comp.items():
-		if (isinstance(val, bool)):
-			comp[key] = str(val).lower()
-	
-	init_str = init_str.format_map(comp)
-	return init_str
-
 # filter out the components we need, then map them onto the init for that part
-def map_filter_init_helper(set, key, match):
+def filter_map_init(set, key, match):
 	filtered = filter_match(set, key, match)
-	return ";\n\t\t".join(map(my_map, filtered))
+	return ";\n\t\t".join(map(lambda x: x['map_init'].format_map(x), filtered))
 
+#filter out the components with a certain field, then fill in the template
 def filter_map_template(set, name):
-	return "\n\t\t".join(map(lambda x: x[name].format_map(x), filter_has(set, name)))
+	filtered = filter_has(set, name)
+	return "\n\t\t".join(map(lambda x: x[name].format_map(x), filtered))
 
 def flatten_pin_dicts(comp):
 	newcomp = {}
@@ -71,6 +61,13 @@ def flatten_pin_dicts(comp):
 
 	return newcomp
 
+def bools_to_lower_str(comp):
+	new_comp = {}
+	for key, val in comp.items():
+		new_comp[key] = str(val).lower() if isinstance(val, bool) else val
+
+	return new_comp
+
 def generate_target_struct(target):
 	# flesh out target components:
 	target = json.loads(target)
@@ -78,11 +75,14 @@ def generate_target_struct(target):
 
 	# alphabetize by component name
 	components = sorted(components.items(), key=lambda x: x[1]['component'])
-	components = list(map(map_helper, components))
+	components = list(map(map_load, components))
 
 	# flatten pin dicts into multiple entries
 	# e.g. "pin": {"a": 12} => "pin_a": 12
 	components = [flatten_pin_dicts(comp) for comp in components]
+
+	# convert booleans to properly cased strings
+	components = [bools_to_lower_str(comp) for comp in components]
 
 	target['components'] = components
 	if not 'name' in target:
@@ -109,11 +109,11 @@ def generate_target_struct(target):
 	replacements['target_name'] = target['name']
 	replacements['init'] = "\n\t\t".join(map(lambda x: x['init'], filter(lambda x: x.get('init', ''), components)))
 
-	replacements['switch'] = map_filter_init_helper(components, 'typename', 'daisy::Switch')
-	replacements['gatein'] = map_filter_init_helper(components, 'typename', 'daisy::GateIn')
-	replacements['encoder'] = map_filter_init_helper(components, 'typename', 'daisy::Encoder')
-	replacements['switch3'] = map_filter_init_helper(components, 'typename', 'daisy::Switch3')
-	replacements['encoder'] = map_filter_init_helper(components, 'typename', 'daisy::Encoder')
+	replacements['switch'] = filter_map_init(components, 'typename', 'daisy::Switch')
+	replacements['gatein'] = filter_map_init(components, 'typename', 'daisy::GateIn')
+	replacements['encoder'] = filter_map_init(components, 'typename', 'daisy::Encoder')
+	replacements['switch3'] = filter_map_init(components, 'typename', 'daisy::Switch3')
+	replacements['encoder'] = filter_map_init(components, 'typename', 'daisy::Encoder')
 	replacements['analogcount'] = 'static const int ANALOG_COUNT = ' + str(len(list(filter_match(components, 'typename', 'daisy::AnalogControl')))) + ';'
 
 	# these got crazy
@@ -122,10 +122,10 @@ def generate_target_struct(target):
 	replacements['analogctrltwo'] = filter_match(components, 'typename', 'daisy::AnalogControl')
 	replacements['analogctrltwo'] = "\n\t\t".join(map(lambda x, i: x['name'] + '.Init(seed.adc.GetPtr(' + str(i) + '), seed.AudioCallbackRate(), ' + str(x['flip']).lower() + ', ' + str(x['invert']).lower() + '});\n', replacements['analogctrltwo'], range(len(list(replacements)))))
 
-	replacements['led'] = map_filter_init_helper(components, 'typename', 'daisy::Led')
-	replacements['rgbled'] = map_filter_init_helper(components, 'typename', 'daisy::RgbLed')
-	replacements['gateout'] = map_filter_init_helper(components, 'typename', 'daisy_gpio')
-	replacements['dachandle'] = map_filter_init_helper(components, 'typename', 'daisy::DacHandle::Config')
+	replacements['led'] = filter_map_init(components, 'typename', 'daisy::Led')
+	replacements['rgbled'] = filter_map_init(components, 'typename', 'daisy::RgbLed')
+	replacements['gateout'] = filter_map_init(components, 'typename', 'daisy_gpio')
+	replacements['dachandle'] = filter_map_init(components, 'typename', 'daisy::DacHandle::Config')
 	
 	
 	replacements['display'] = '// no display' if not 'display' in target else \
