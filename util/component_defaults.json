@@ -1,5 +1,6 @@
 {
 	"Switch": {
+		"map_init": "{name}.Init(seed.GetPin({pin}), seed.AudioCallbackRate(), {type}, {polarity}, {pull})",
 		"typename": "daisy::Switch",
 		"pin": "a",
 		"type": "daisy::Switch::TYPE_MOMENTARY",
@@ -27,6 +28,7 @@
 	  	]
 	},
 	"Switch3": {
+		"map_init": "{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b})",
 		"typename": "daisy::Switch3",
 		"pin": "a,b",
 		"mapping": [
@@ -34,6 +36,7 @@
 		]
 	},
 	"Encoder": {
+		"map_init": "{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b}), seed.GetPin({pin_click}), seed.AudioCallbackRate())",
 		"typename": "daisy::Encoder",
 		"pin": "a,b,click",
 		"process": "{name}.Debounce();",
@@ -67,6 +70,7 @@
 		]
 	},
 	"GateIn": {
+		"map_init": "dsy_gpio_pin {name}_pin = seed.GetPin({pin});\n{name}.Init({name}_pin)",
 		"typename": "daisy::GateIn",
 		"pin": "a",
 		"mapping": [
@@ -85,6 +89,7 @@
 		"mapping": [{ "name": "{name}", "get": "(hardware.{name}.Value())", "range": [0, 1] }]
 	},
 	"Led": {
+		"map_init": "{name}.Init(seed.GetPin({pin}), {invert});\n{name}.Set(0.0f)",
 		"typename": "daisy::Led",
 		"pin": "a",
 		"invert": true,
@@ -92,6 +97,7 @@
 		"mapping": [{ "name": "{name}", "set": "hardware.{name}.Set(<name>);" }]
 	},
 	"RgbLed": {
+		"map_init": "{name}.Init(seed.GetPin({pin_r}), seed.GetPin({pin_g}), seed.GetPin({pin_b}), {invert});\n{name}.Set(0.0f, 0.0f, 0.0f)",
 		"typename": "daisy::RgbLed",
 		"pin": "r,g,b",
 		"invert": true,
@@ -105,6 +111,7 @@
 		]
 	},
 	"GateOut": {
+		"map_init": "{name}.pin  = seed.GetPin({pin});\n{name}.mode = {mode};\n{name}.pull = ${pull};\ndsy_gpio_init(&{name})",
 		"typename": "daisy::dsy_gpio",
 		"pin": "a",
 		"mode": "DSY_GPIO_MODE_OUTPUT_PP",
@@ -114,6 +121,7 @@
 		]
 	},
 	"CVOuts": {
+		"map_init": "{name}.bitdepth = {bitdepth};\n{name}.buff_state = {buff_state};\n{name}.mode = {mode};\n{name}.chn = {channel};\nseed.dac.Init({name});\nseed.dac.WriteValue({channel}, 0)",
 		"typename": "daisy::DacHandle::Config",
 		"pin": "",
 		"bitdepth": "daisy::DacHandle::BitDepth::BITS_12",

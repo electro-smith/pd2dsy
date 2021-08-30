@@ -35,53 +35,41 @@ def map_helper(pair):
 
 	return pair[1]
 
-def my_filter(set, key, match):
+def filter_match(set, key, match):
 	return filter(lambda x: x.get(key, '') == match, set)
 
 def filter_has(set, key):
 	return filter(lambda x: x.get(key, '') != '', set)
 
-
-component_inits = {'daisy::Switch': '{name}.Init(seed.GetPin({pin}), seed.AudioCallbackRate(), {type}, {polarity}, {pull});\n',
-					'daisy::GateIn': 'dsy_gpio_pin {name}_pin = seed.GetPin({pin});\n{name}.Init({name}_pin);',
-					'daisy::Switch3': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b});\n',
-					'daisy::Encoder': '{name}.Init(seed.GetPin({pin_a}), seed.GetPin({pin_b}), seed.GetPin({pin_click}), seed.AudioCallbackRate());\n',
-					'daisy::Led': '{name}.Init(seed.GetPin({pin}), {invert});\n{name}.Set(0.0f);\n',	
-					'daisy::RgbLed': '{name}.Init(seed.GetPin({pin_r}), seed.GetPin({pin_g}), seed.GetPin({pin_b}), {invert});\n{name}.Set(0.0f, 0.0f, 0.0f);\n',
-					'dsy_gpio': '{name}.pin  = seed.GetPin({pin});\n{name}.mode = {mode};\n{name}.pull = ${pull};\ndsy_gpio_init(&{name});\n',
-					'daisy::DacHandle::Config': '{name}.bitdepth   = {bitdepth};\n{name}.buff_state = {buff_state};\n{name}.mode       = {mode};\n\
-					{name}.chn        = {channel};\nseed.dac.Init({name});\nseed.dac.WriteValue({channel}, 0);\n',
-					
-				}
-
 def my_map(comp):
-	init_str = component_inits[comp['typename']]
-	# comp['i'] = str(i)
-
-	# Some of the pins are dictionaries: encoder, switch3, rgbled
-	if(isinstance(comp.get('pin', ''), dict)):
-		comp['pin_a'] = comp['pin'].get('a', '')
-		comp['pin_b'] = comp['pin'].get('b', '')
-		comp['pin_click'] = comp['pin'].get('click', '')
-		comp['pin_r'] = comp['pin'].get('r', '')
-		comp['pin_g'] = comp['pin'].get('g', '')
-		comp['pin_b'] = comp['pin'].get('b', '')
+	init_str = comp['map_init']
 
 	# force booleans to lowercase strings
 	for key,val in comp.items():
 		if (isinstance(val, bool)):
 			comp[key] = str(val).lower()
-
-	return init_str.format_map(comp)	
+	
+	init_str = init_str.format_map(comp)
+	return init_str
 
 # filter out the components we need, then map them onto the init for that part
 def map_filter_init_helper(set, key, match):
-	filtered = my_filter(set, key, match)
+	filtered = filter_match(set, key, match)
 	return "".join(map(my_map, filtered))
 
 def filter_map_template(set, name):
-	return "".join(map(lambda x: x[name].format_map(x) + '\n', filter_has(set, name)))
+	return "\n\t\t".join(map(lambda x: x[name].format_map(x), filter_has(set, name)))
 
+def flatten_pin_dicts(comp):
+	newcomp = {}
+	for key,val in comp.items():
+		if (isinstance(val, dict) and key == 'pin'):
+			for subkey, subval in val.items():
+				newcomp[key + '_' + subkey] = subval
+		else:
+			newcomp[key] = val
+
+	return newcomp
 
 def generate_target_struct(target):
 	# flesh out target components:
@@ -91,6 +79,10 @@ def generate_target_struct(target):
 	# alphabetize by component name
 	components = sorted(components.items(), key=lambda x: x[1]['component'])
 	components = list(map(map_helper, components))
+
+	# flatten pin dicts into multiple entries
+	# e.g. "pin": {"a": 12} => "pin_a": 12
+	components = [flatten_pin_dicts(comp) for comp in components]
 
 	target['components'] = components
 	if not 'name' in target:
@@ -108,6 +100,8 @@ def generate_target_struct(target):
 		target['defines']['OOPSY_OLED_DISPLAY_WIDTH'] = target['display']['dim'][0]
 		target['defines']['OOPSY_OLED_DISPLAY_HEIGHT'] = target['display']['dim'][1]
 
+
+
 	template = open(template_path, 'r').read()
 
 	replacements = {}
@@ -120,12 +114,12 @@ def generate_target_struct(target):
 	replacements['encoder'] = map_filter_init_helper(components, 'typename', 'daisy::Encoder')
 	replacements['switch3'] = map_filter_init_helper(components, 'typename', 'daisy::Switch3')
 	replacements['encoder'] = map_filter_init_helper(components, 'typename', 'daisy::Encoder')
-	replacements['analogcount'] = 'static const int ANALOG_COUNT = ' + str(len(list(my_filter(components, 'typename', 'daisy::AnalogControl')))) + ';'
+	replacements['analogcount'] = 'static const int ANALOG_COUNT = ' + str(len(list(filter_match(components, 'typename', 'daisy::AnalogControl')))) + ';'
 
 	# these got crazy
-	replacements['analogctrlone'] = my_filter(components, 'typename', 'daisy::AnalogControl')
+	replacements['analogctrlone'] = filter_match(components, 'typename', 'daisy::AnalogControl')
 	replacements['analogctrlone'] = "".join(map(lambda x, i: 'cfg[' + str(i) + '].InitSingle(seed.GetPin(' + str(x['pin']) + '));\n', replacements['analogctrlone'], range(len(list(replacements)))))
-	replacements['analogctrltwo'] = my_filter(components, 'typename', 'daisy::AnalogControl')
+	replacements['analogctrltwo'] = filter_match(components, 'typename', 'daisy::AnalogControl')
 	replacements['analogctrltwo'] = "".join(map(lambda x, i: x['name'] + '.Init(seed.adc.GetPtr(' + str(i) + '), seed.AudioCallbackRate(), ' + str(x['flip']).lower() + ', ' + str(x['invert']).lower() + '});\n', replacements['analogctrltwo'], range(len(list(replacements)))))
 
 	replacements['led'] = map_filter_init_helper(components, 'typename', 'daisy::Led')
@@ -148,10 +142,11 @@ def generate_target_struct(target):
 	replacements['displayprocess'] = filter_map_template(components, 'display')
 	replacements['hidupdaterates'] = filter_map_template(components, 'updaterate')
 
-	replacements['comps'] = "".join(map(lambda x: x['typename'] + ' ' + x['name'] + ";\n", components))
+	replacements['comps'] = ";\n\t".join(map(lambda x: x['typename'] + ' ' + x['name'], components))
 	replacements['dispdec'] = ('daisy::OledDisplay<' + target['display']['driver'] + '> display;') if ('display' in target) else  "// no display"
 
-	return template.format_map(replacements)
+	template = template.format_map(replacements)
+	return template
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Utility for generating board support files from JSON.')
