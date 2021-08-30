@@ -145,6 +145,11 @@ def generate_target_struct(target):
 	# ${components.filter((e) => e.meta).map((e) => e.meta.map(m=>`${template(m, e)}`).join("")).join("")}
 
 	replacements['postprocess'] = filter_map_template(components, 'postprocess')
+	replacements['displayprocess'] = filter_map_template(components, 'display')
+	replacements['hidupdaterates'] = filter_map_template(components, 'updaterate')
+
+	replacements['comps'] = "".join(map(lambda x: x['typename'] + ' ' + x['name'] + ";\n", components))
+	replacements['dispdec'] = ('daisy::OledDisplay<' + target['display']['driver'] + '> display;') if ('display' in target) else  "// no display"
 
 	return template.format_map(replacements)
 

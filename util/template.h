@@ -21,10 +21,36 @@ struct Daisy {{
 		{display}
 	}}
 
-void ProcessAllControls() {{
-	{process}
-}}
+	void ProcessAllControls() {{
+		{process}
+	}}
 
-void PostProcess() {{
-	{postprocess}
-}}
+	void PostProcess() {{
+		{postprocess}
+	}}
+
+	void Display() {{
+		{displayprocess}
+	}}
+
+	void SetAudioSampleRate(daisy::SaiHandle::Config::SampleRate samplerate) {{
+		seed.SetAudioSampleRate(samplerate);
+		SetHidUpdateRates();
+	}}
+	void SetAudioBlockSize(size_t size) {{
+		seed.SetAudioBlockSize(size);
+		SetHidUpdateRates();
+	}}
+
+	void SetHidUpdateRates() {{
+		{hidupdaterates}
+	}}
+
+	daisy::DaisySeed seed;
+	
+	{comps}
+	{dispdec}
+	
+	int menu_click = 0, menu_hold = 0, menu_rotate = 0;
+
+}};

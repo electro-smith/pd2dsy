@@ -6,7 +6,16 @@
         "led": {
             "component": "GateOut",
             "invert": false,
-            "pin": 100
+            "pin": 100,
+            "updaterate": "code.{things};",
+            "things": "test"
+        },
+        "switch": {
+            "component": "GateOut",
+            "invert": false,
+            "pin": 100,
+            "display": "{things}",
+            "things": "testcode"
         }
     }
 }
