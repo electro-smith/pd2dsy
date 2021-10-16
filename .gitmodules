@@ -1,6 +1,3 @@
-[submodule "hvcc"]
-	path = hvcc
-	url = https://github.com/stephenhensley/hvcc
 [submodule "libdaisy"]
 	path = libdaisy
 	url = https://github.com/CorvusPrudens/libDaisy
