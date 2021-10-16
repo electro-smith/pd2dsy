@@ -151,15 +151,15 @@ def queryUser(prompt, fallback='n'):
     trueTuple = ('y', 'yes')
     falseTuple = ('n', 'no')
     if fallback.lower() in trueTuple:
-        response = raw_input(prompt + ' [Y/n] ')
+        response = input(prompt + ' [Y/n] ')
         return response.lower().strip() not in falseTuple
     elif fallback.lower() in falseTuple:
-        response = raw_input(prompt + ' [y/N] ')
+        response = input(prompt + ' [y/N] ')
         return response.lower().strip() in trueTuple
     else:
-        response = raw_input(prompt + ' [y/n] ')
+        response = input(prompt + ' [y/n] ')
         while (response.lower().strip() not in ('y', 'yes', 'n', 'no')):
-            response = raw_input(prompt + 'please provide a valid yes/no input ')
+            response = input(prompt + 'please provide a valid yes/no input ')
         return True if response.lower().strip() in trueTuple else False
 
 def halt():
