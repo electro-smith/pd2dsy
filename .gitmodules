@@ -1,4 +1,4 @@
 [submodule "libdaisy"]
 	path = libdaisy
-	url = https://github.com/CorvusPrudens/libDaisy
-	branch = dfu_compatible
+	url = https://github.com/electro-smith/libDaisy
+	branch = master
