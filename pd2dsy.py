@@ -62,9 +62,11 @@ def halt():
 def main():
     tick = time.time()
 
+    boardlist = ['seed', 'patch', 'patch_sm', 'patch_init', 'pod', 'field']
+
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
-    parser.add_argument('-b',  '--board', help='hardware platform for generated output.', default='seed')
+    parser.add_argument('-b',  '--board', help=f'hardware platform for generated output. The supported boards are: {", ".join(boardlist)}', default='seed')
     parser.add_argument('-p',  '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
     parser.add_argument('-d', '--directory', type=str, help="set the parent directory of the output.", default='.')
     parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
@@ -72,11 +74,18 @@ def main():
     parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
     parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=2)
     parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
+    # parser.add_argument('--list-boards', help='list boards that have integrated support', action='store_true')
 
     args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
     search_paths = args.search_paths or []
     copyright = ""
+
+    # why can't we have nice things
+    # if args.list_boards:
+    #     boardlist = ['seed', 'patch', 'patch_sm', 'patch_init', 'pod', 'field']
+    #     print(', '.join(boardlist))
+    #     halt()
 
     results = {}
     verbose = False
