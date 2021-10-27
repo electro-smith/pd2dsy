@@ -1,2 +1,3 @@
+wheel
 git+https://github.com/CorvusPrudens/hvcc@feature/daisy_json
 jinja2
