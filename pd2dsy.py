@@ -119,7 +119,7 @@ def main():
         halt()
 
     if rom_type in ('size', 'double_size'):
-        print('\n\033[0;32mNote: a rom type of "' + rom_type + '" means you\'ll be running your project with the provided bootloader.\033[0m')
+        print(f'\n\{Colours.green}Note: a rom type of "{rom_type}" means you\'ll be running your project with the provided bootloader.{Colours.end}')
 
     linker_file = ''
     if rom_type == 'double_size':
