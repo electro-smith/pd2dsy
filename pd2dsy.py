@@ -67,6 +67,7 @@ def main():
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
     parser.add_argument('-b',  '--board', help=f'hardware platform for generated output. The supported boards are: {", ".join(boardlist)}', default='seed')
+    parser.add_argument('-c', '--custom-json', type=str, help='provide a custom JSON board description', default='')
     parser.add_argument('-p',  '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
     parser.add_argument('-d', '--directory', type=str, help="set the parent directory of the output.", default='.')
     parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
@@ -133,8 +134,11 @@ def main():
 
     meta['daisy']['linker_script'] = linker_file
 
-    with open(meta_path, 'w') as file:
-        json.dump(meta, file)
+    if args.custom_json != '':
+        meta_path = args.custom_json
+    else:
+        with open(meta_path, 'w') as file:
+            json.dump(meta, file)
 
     results = hvcc.compile_dataflow(
         in_path=inpath,
