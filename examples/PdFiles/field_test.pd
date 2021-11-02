@@ -1,4 +1,4 @@
-#N canvas 6298 1095 949 662 12;
+#N canvas 6330 1183 949 662 12;
 #X obj 29 30 adc~;
 #X obj 29 375 dac~;
 #X obj 43 105 delwrite~ \$0-delay 1000;
@@ -20,7 +20,7 @@
 #X obj 143 324 r PadB2_press @hv_param;
 #X obj 43 142 r Knob1 @hv_param;
 #X obj 324 117 r Cv1 @hv_param;
-#X obj 192 375 s led_PadB2 @hv_param;
+#X obj 192 375 s led_Key_B2 @hv_param;
 #X connect 0 0 3 0;
 #X connect 0 0 13 0;
 #X connect 3 0 6 0;
