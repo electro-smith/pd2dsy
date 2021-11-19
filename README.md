@@ -28,6 +28,46 @@ Your patch will be built and uploaded automatically, assuming you have a Daisy i
 **For now, the script leaves the path to libdaisy as `../libdaisy`, which works if the generated folder is placed within the root directory.
 Otherwise, the Makefile should be edited (or the `--libdaisy-depth` option should be used) to point to a valid libdaisy repository.**
 
+## Optional features
+
+### -c, --custom-json
+
+If you've designed your own prototype or board based on the Daisy platform, you can specify the I/O in a custom JSON file. Details for how this works can be found in the tool that actually performs this generation, [json2daisy](https://github.com/electro-smith/json2daisy).
+
+### --ram
+
+You can specify whether you'd like to optimize your project's RAM usage for `speed` or `size`. The Daisy's internal SRAM has a fast access time, but it can be quite limited at 512kB (or even less if you're using the bootloader!). The external SDRAM (note the _D_), while it can be slower to access, affords a hefty 64MB of space. Currently, only the heap is placed in SDRAM if `size` is selected (meaning all dynamic allocations happen in SDRAM), but that's the best use-case for it anyway, since the largest program you could squeeze onto the Daisy would only be around 512kB.
+
+The appropriate linker is automatically supplied and chosen in the makefile if you select `size`, so all you need to do is rebuild the project.
+
+### --rom
+
+You can specify whether you'd like to optimize your project's ROM usage for `speed` or `size`. The Daisy's internal flash allows programs to start very quickly, and offers very slightly better performance. However, if your program is too hefty to fit in the Daisy's 128kB of internal flash, then you'll need to execute the program from SRAM using the Daisy bootloader (for up to 512kB). Selecting `size` will configure your project for the bootloader, and all you need to do is upload the bootloader, build your program, then upload the resulting binary to the bootloader. If you need even more size, you can execute your programs directly from the 8MB QSPI flash chip with `double_size`, though performance may take a hit in certain scenarios.
+
+<!-- [Detailed steps are provided here](wiki/RunningLargePrograms.md), but note that the linker script selection will be handled for you. -->
+
+Both `--ram` and `--rom` default to `speed`.
+
+### -d, --directory
+
+The parent directory of your project can be specified. This is convenient if you'd like to build from somewhere other than your intended project directory, for example:
+
+~~~bash
+python2 pd2dsy.py -d build path/to/source.pd
+~~~
+
+This would place your project in the `build` subdirectory. If it doesn't exist, then pd2dsy will ask if you'd like to create it.
+
+### --libdaisy-depth
+
+pd2dsy generates a number of helpful files that need to know where your libDaisy folder is located. If you don't want to change them all manually, then you can specify how far away the libDaisy folder is from your project folder:
+
+~~~bash
+python2 pd2dsy.py --libdaisy-depth 2 path/to/source.pd
+~~~
+
+This will tell all the project files to look two directories above the current one to find libDaisy (as in `../../libDaisy`). This does require that libDaisy exists in _some_ parent directory of your project, but you can of course specify it manually if you prefer.
+
 # Interacting with the Daisy I/O
 
 Each board has a selection of physical I/O that can interact with your PD patch. Most components have an _alias_, which allows you to refer to the same input/output by different names if you have a preference. All names and aliases are _case insensitive_, so you can style them however you like (e.g. `GateIn`).
