@@ -19,12 +19,15 @@
 #     * sendFloatToReceiver for all defaults.
 #
 #
+from genericpath import exists
 import os
+import re
 import time
 import json
 import sys
 import argparse
 import subprocess
+import shutil
 import hvcc
 
 class Colours:
@@ -62,7 +65,7 @@ def halt():
 def main():
     tick = time.time()
 
-    boardlist = ['seed', 'patch', 'patch_sm', 'patch_init', 'pod', 'field']
+    boardlist = ['patch', 'patch_init', 'pod', 'field']
 
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
@@ -73,7 +76,7 @@ def main():
     parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
     parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
     parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
-    parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=2)
+    parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=1)
     parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
     # parser.add_argument('--list-boards', help='list boards that have integrated support', action='store_true')
 
@@ -120,7 +123,7 @@ def main():
         halt()
 
     if rom_type in ('size', 'double_size'):
-        print(f'\n\{Colours.green}Note: a rom type of "{rom_type}" means you\'ll be running your project with the provided bootloader.{Colours.end}')
+        print(f'\n{Colours.green}Note: a rom type of "{rom_type}" means you\'ll be running your project with the Daisy bootloader.{Colours.end}')
 
     linker_file = ''
     if rom_type == 'double_size':
@@ -163,8 +166,9 @@ def main():
                 print("{2}Error{3} {0} exception: {1}".format(
                     r["stage"], r["notifs"]["exception"], Colours.red, Colours.end))
 
-            # clear any exceptions such that results can be JSONified if necessary
-            r["notifs"]["exception"] = []
+            sys.exit(1)
+            # # clear any exceptions such that results can be JSONified if necessary
+            # r["notifs"]["exception"] = []
 
         # print any warnings
         for i, warning in enumerate(r["notifs"].get("warnings", [])):
@@ -174,16 +178,69 @@ def main():
     if verbose:
         print("Total compile time: {0:.2f}ms".format(1000 * (time.time() - tick)))
 
-    if not args.no_build:
-        daisy_src = os.path.join(output, 'daisy/source')
+    # Reorganize project structure to be more friendly
+
+    # delete unused folders
+    shutil.rmtree(os.path.join(output, 'c'))
+    shutil.rmtree(os.path.join(output, 'hv'))
+    shutil.rmtree(os.path.join(output, 'ir'))
+    shutil.copytree(os.path.join(output, 'daisy'), output, dirs_exist_ok=True)
+    shutil.rmtree(os.path.join(output, 'daisy'))
+    os.unlink(os.path.join(output, 'build.json'))
+
+    # Find main file
+    main_file = None
+    target = None
+    main_regex = re.compile('(HeavyDaisy_.+?).cpp')
+    for file in os.listdir(os.path.join(output, 'source')):
+        match = main_regex.search(file)
+        if match is not None:
+            main_file = file
+            target = match.group(1)
+            break
+    
+    # If we can find the main file, then we can easily make the project structure even a bit nicer
+    if main_file is not None:
+        shutil.move(os.path.join(output, 'source', main_file), os.path.join(output, main_file))
+        os.unlink(os.path.join(output, 'source', 'Makefile'))
+
+        makefile_path = os.path.join(os.path.dirname(__file__), 'util', 'Makefile')
+        with open(makefile_path, 'r') as file:
+            makefile = file.read()
+        
+        makefile = makefile.replace('# GENERATE TARGET', f'TARGET={target}')
+        makefile = makefile.replace('# LIBDAISY DEPTH', '../'*args.libdaisy_depth)
         if meta['daisy'].get('bootloader', False):
-            build_process = subprocess.Popen(f'make -C {daisy_src} && make program-app -C {daisy_src}',
-                shell=True, stderr=subprocess.STDOUT)
-        else:
-            build_process = subprocess.Popen(f'make -C {daisy_src} && make program-dfu -C {daisy_src}',
-                shell=True, stderr=subprocess.STDOUT)
-            
-        build_process.wait()
+            makefile = makefile.replace('# BOOTLOADER', 'C_DEFS += -DBOOT_APP')
+
+        if linker_file != '':
+            makefile = makefile.replace('# LINKER', f'LDSCRIPT = {linker_file}')
+            shutil.copy2(os.path.join(os.path.dirname(__file__), 'util', linker_file), os.path.join(output, linker_file))
+        with open(os.path.join(output, 'Makefile'), 'w') as file:
+            file.write(makefile)
+
+        if not args.no_build:
+            if meta['daisy'].get('bootloader', False):
+                build_process = subprocess.Popen(f'make -C {output} && make program-app -C {output}',
+                    shell=True, stderr=subprocess.STDOUT)
+            else:
+                build_process = subprocess.Popen(f'make -C {output} && make program-dfu -C {output}',
+                    shell=True, stderr=subprocess.STDOUT)
+                
+            build_process.wait()
+
+    else:
+        # If we weren't able to find the main file, then just resort to normal building
+        if not args.no_build:
+            daisy_src = os.path.join(output, 'source')
+            if meta['daisy'].get('bootloader', False):
+                build_process = subprocess.Popen(f'make -C {daisy_src} && make program-app -C {daisy_src}',
+                    shell=True, stderr=subprocess.STDOUT)
+            else:
+                build_process = subprocess.Popen(f'make -C {daisy_src} && make program-dfu -C {daisy_src}',
+                    shell=True, stderr=subprocess.STDOUT)
+                
+            build_process.wait()
 
 if __name__ == "__main__":
     main()
