@@ -19,7 +19,6 @@
 #     * sendFloatToReceiver for all defaults.
 #
 #
-from genericpath import exists
 import os
 import re
 import time
