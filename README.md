@@ -6,7 +6,6 @@ Utility for converting Pure Data (Vanilla) patches to Daisy projects.
 Board controls can be brought into PD from receive objects.
 For example, if we wanted to receive a bang when we pressed the button 1 on the pod we would use this object:
 ```r Button1 @hv_param```
-Note: You can also set some defaults. ```r Knob1 @hv_param .5 0 1``` Defaults to .5, and ranges from 0 to 1.
 
 ## Installation/Setup
 
