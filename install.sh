@@ -1,8 +1,10 @@
 #!/bin/bash
 echo "Installing python packages..." 
-python -m venv pd_env
+rm -rf pd_env
+python3 -m venv pd_env
 source pd_env/bin/activate
-python -m pip install -r requirements.txt
+python3 -m pip install wheel
+python3 -m pip install -r requirements.txt
 
 echo "Building libDaisy..."
 git submodule update --init --recursive
