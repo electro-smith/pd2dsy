@@ -105,9 +105,17 @@ def main():
 
     print(f'Generating project in "{output}"')
 
-    meta = {"daisy": {"board": args.board}}
+    if args.custom_json == '':
+        meta = {"daisy": {"board": args.board}}
+    else:
+        try:
+            with open(args.custom_json, 'rb') as file:
+                custom_json = json.load(file)
+        except FileNotFoundError:
+            print(f'Error: unable to open custom json file "{args.custom_json}"')
+        meta = {"daisy": {"board": custom_json['name'], "board_file": args.custom_json}}
+    
     meta_path = os.path.join(os.path.dirname(__file__), "util/daisy.json")
-
     ram_type = args.ram
 
     if ram_type not in ('size', 'speed'):
@@ -136,11 +144,8 @@ def main():
 
     meta['daisy']['linker_script'] = linker_file
 
-    if args.custom_json != '':
-        meta_path = args.custom_json
-    else:
-        with open(meta_path, 'w') as file:
-            json.dump(meta, file)
+    with open(meta_path, 'w') as file:
+        json.dump(meta, file)
 
     results = hvcc.compile_dataflow(
         in_path=inpath,
