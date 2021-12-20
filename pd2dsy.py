@@ -113,6 +113,7 @@ def main():
                 custom_json = json.load(file)
         except FileNotFoundError:
             print(f'Error: unable to open custom json file "{args.custom_json}"')
+            sys.exit(1)
         meta = {"daisy": {"board": custom_json['name'], "board_file": args.custom_json}}
     
     meta_path = os.path.join(os.path.dirname(__file__), "util/daisy.json")
