@@ -76,66 +76,79 @@ Some components have _variants_, which allow you to interact with them in multip
 
 Here's what each component expects for its default behavior and variants:
 
-| Type (_variant) | Behavior |
-| --- | --- |
-| **Inputs** | --- |
-| Voltage Input | Returns a floating point representation of the voltage at its input. The typical range is 0-5 V, which is represented as 0-1. |
-| Bipolar Voltage Input | Similar to a regular voltage input, but can represent negative voltages. |
-| Switch | Returns a bang on the signal's rising edge (i.e. when the switch is actuated). |
-| Switch (_press) | Returns a float representing the current state (1 = pressed, 0 = not pressed) |
-| Switch (_fall) | Returns a bang on the signal's falling edge (i.e. when the switch is released). |
-| Switch (_seconds) | Returns a float representing the number of seconds the switch has been held down. |
-| SPDT Switch | Returns a float representing the current state, either 0 or 1. |
-| Encoder | Returns a 1 if turned one direction, -1 if turned in the other, and 0 otherwise. |
-| Encoder (\_rise) | Returns a bang when the encoder is pressed. The special alias _EncSwitch_ is always bound to this. |
-| Encoder (_press) | Same as switch _press. |
-| Encoder (_fall) | Same as switch _fall. |
-| Encoder (_seconds) | Same as switch _seconds. |
-| Gate In | Returns a float representing the current gate voltage, where a _high_ voltage is 1 and a _low_ voltage is 0. |
-| Gate In (_trig) | Returns a bang on the rising edge of the gate signal. |
-| **Outputs** | --- |
-| CV Out | Expects a floating point value from 0-1, usually converted to 0-5V. |
-| Gate Out | Expects a floating point value from 0-1. 0 sets the output low, and 1 sets it high. |
-| LED | Expects a floating point value from 0-1. The brightness is PWM modulated to match the input. |
-| RGB LED | Expects a floating point value from 0-1. The default behavior sets all three colors to the same brightness. |
-| RGB LED (_white) | Same as default. |
-| RGB LED (_red) | Expects a floating point value from 0-1. Sets the brightness of the red LED only. |
-| RGB LED (_green) | Expects a floating point value from 0-1. Sets the brightness of the green LED only. |
-| RGB LED (_blue) | Expects a floating point value from 0-1. Sets the brightness of the blue LED only. |
+| Type | _variant | Behavior |
+| --- | --- | --- |
+| **Inputs** | --- | --- |
+| Voltage Input | --- | Returns a floating point representation of the voltage at its input. The typical range is 0-5 V, which is represented as 0-1. |
+| Bipolar Voltage Input | --- | Similar to a regular voltage input, but can represent negative voltages. |
+| Switch | --- | Returns a bang on the signal's rising edge (i.e. when the switch is actuated). |
+| Switch | _press | Returns a float representing the current state (1 = pressed, 0 = not pressed) |
+| Switch | _fall | Returns a bang on the signal's falling edge (i.e. when the switch is released). |
+| Switch | _seconds | Returns a float representing the number of seconds the switch has been held down. |
+| SPDT Switch | --- | Returns a float representing the current state, either 0 or 1. |
+| Encoder | --- | Returns a 1 if turned one direction, -1 if turned in the other, and 0 otherwise. |
+| Encoder | \_rise | Returns a bang when the encoder is pressed. The special alias _EncSwitch_ is always bound to this. |
+| Encoder | _press | Same as switch _press. |
+| Encoder | _fall | Same as switch _fall. |
+| Encoder | _seconds | Same as switch _seconds. |
+| Gate In | --- | Returns a float representing the current gate voltage, where a _high_ voltage is 1 and a _low_ voltage is 0. |
+| Gate In | _trig | Returns a bang on the rising edge of the gate signal. |
+| **Outputs** | --- | --- |
+| CV Out | --- | Expects a floating point value from 0-1, usually converted to 0-5V. |
+| Gate Out | --- | Expects a floating point value from 0-1. 0 sets the output low, and 1 sets it high. |
+| LED | --- | Expects a floating point value from 0-1. The brightness is PWM modulated to match the input. |
+| RGB LED | --- | Expects a floating point value from 0-1. The default behavior sets all three colors to the same brightness. |
+| RGB LED | _white | Same as default. |
+| RGB LED | _red | Expects a floating point value from 0-1. Sets the brightness of the red LED only. |
+| RGB LED | _green | Expects a floating point value from 0-1. Sets the brightness of the green LED only. |
+| RGB LED | _blue | Expects a floating point value from 0-1. Sets the brightness of the blue LED only. |
 
 Here's how the newly added sensors are addressed:
 
-| Type (_variant) | Behavior |
-| --- | --- |
-| **Inputs** | --- |
-| BME280 | Returns the temperature in degrees C. |
-| BME280 (_temp) | Behaves the same as the default option. |
-| BME280 (_hum) | Returns the humidity in relative percentage. |
-| BME280 (_press) | Returns the pressure in pascals (1 atm ~= 100 kPa) |
-| BME280 (_alt) | Returns the estimated altitude in meters |
-| BMP390 | Returns the temperature in degrees C. |
-| BMP390 (_temp) | Behaves the same as the default option. |
-| BMP390 (_press) | Returns the pressure in pascals (1 atm ~= 100 kPa) |
-| BMP390 (_alt) | Returns the estimated altitude in meters |
-| Hall Sensor | Returns the current state of the sensor (0 if no field present, otherwise 1). |
-| Hall Sensor (_count) | Returns the number of times the hall sensor has been activated. |
-| TLV93D | Returns the magnitude of the field's force vector in uT (i.e. the amount of field). |
-| TLV93D (_x, _y, _z) | Returns the field's strength in the given axis in uT. |
-| TLV93D (_amount) | Behaves the same as the default option. |
-| TLV93D (_azimuth) | Returns the field's azimuth for spherical coordinates. |
-| TLV93D (_polar) | Returns the field's 3D inclination for spherical coordinates. |
-| MPR121 | Returns whether channel 0 is touched according to the threshold. |
-| MPR121 (_ch0 ... _ch11) | Returns a 1 if the given channel is touched according to the threshold, otherwise 0. |
-| MPR121 (_ch0_raw ... _ch11_raw) | Returns the raw sensor data for the given channel as a 10-bit unsigned integer. |
-| APDS9960 | Returns the current read gesture (1-4) if detected, otherwise 0. |
-| APDS9960 (_gest) | Behaves the same as the default option. |
-| APDS9960 (_prox) | Returns the detected proximity in undefined units (meant for relative distance detection). |
-| APDS9960 (_red, _green, _blue, _clear) | Returns the detected brightness of the given color as a 16-bit unsigned integer. |
+| Type | _variant | Behavior |
+| --- | --- | --- |
+| **Inputs** | --- | --- |
+| BME280 | --- | Returns the temperature in degrees C. |
+| BME280 | _temp | Behaves the same as the default option. |
+| BME280 | _hum | Returns the humidity in relative percentage. |
+| BME280 | _press | Returns the pressure in pascals (1 atm ~= 100 kPa) |
+| BME280 | _alt | Returns the estimated altitude in meters |
+| BMP390 | --- | Returns the temperature in degrees C. |
+| BMP390 | _temp | Behaves the same as the default option. |
+| BMP390 | _press | Returns the pressure in pascals (1 atm ~= 100 kPa) |
+| BMP390 | _alt | Returns the estimated altitude in meters |
+| Hall Sensor | --- | Returns the current state of the sensor (0 if no field present, otherwise 1). |
+| Hall Sensor | _count | Returns the number of times the hall sensor has been activated. |
+| TLV93D | --- | Returns the magnitude of the field's force vector in uT (i.e. the amount of field). |
+| TLV93D | _x, _y, _z | Returns the field's strength in the given axis in uT. |
+| TLV93D | _amount | Behaves the same as the default option. |
+| TLV93D | _azimuth | Returns the field's azimuth for spherical coordinates. |
+| TLV93D | _polar | Returns the field's 3D inclination for spherical coordinates. |
+| MPR121 | --- | Returns whether channel 0 is touched according to the threshold. |
+| MPR121 | _ch0 ... _ch11 | Returns a 1 if the given channel is touched according to the threshold, otherwise 0. |
+| MPR121 | _ch0_raw ... _ch11_raw | Returns the raw sensor data for the given channel as a 10-bit unsigned integer. |
+| APDS9960 | --- | Returns the current read gesture (1-4) if detected, otherwise 0. |
+| APDS9960 | _gest | Behaves the same as the default option. |
+| APDS9960 | _prox | Returns the detected proximity in undefined units (meant for relative distance detection). |
+| APDS9960 | _red, _green, _blue, _clear | Returns the detected brightness of the given color as a 16-bit unsigned integer. |
+| VL53L1X | --- | Returns the distance measurement in mm. |
+| Neo Trellis | --- | Sends a bang when the first button (index 0) is pressed. |
+| Neo Trellis | _0 ... _15 | Sends a bang when the given button is pressed. |
+| Neo Trellis | \_0\_falling ... \_15\_falling | Sends a bang when the given button is released. |
+| Neo Trellis | \_0\_state ... \_15\_state | Returns the current state of the given button (1 = pressed, 0 = released). |
+| BNO055 | --- | Returns the X component of the accelerometer in m/s^2. |
+| BNO055 | \_accel\_x, \_accel\_y, \_accel\_z | Returns the given axis from the accelerometer in m/s^2. |
+| BNO055 | \_magnet\_x, \_magnet\_y, \_magnet\_z | Returns the given axis from the magnetometer in uT. |
+| BNO055 | \_gyro\_x, \_gyro\_y, \_gyro\_z | Returns the given axis from the gyroscope in dps (degrees per second). |
+| BNO055 | \_euler\_x, \_euler\_y, \_euler\_z | Returns the rotation along the given axis in degrees. |
+| BNO055 | \_linear\_accel\_x, \_linear\_accel\_y, \_linear\_accel\_z | Returns the linear acceleration in the given axis in m/s^2. |
+| BNO055 | \_grav\_x, \_grav\_y, \_grav\_z | Returns the acceleration due to gravity along the given axis in m/s^2. |
+| BNO055 | \_quat\_w, \_quat\_x, \_quat\_y, \_quat\_z | Returns the orientation represented as a quaternion. |
 | **Outputs** | --- |
-| Stepper Motor | Expects a floating point value of any arbitrary size, representing the number of steps to rotate. The sign of the number determines direction. |
-| Stepper Motor (_release) | Triggers the stepper motor to relax its fields when a positive value is received, allowing the motor to spin freely. |
-| DC Motor | Expects a floating point value from -1 to 1. The magnitude controls the speed, the sign controls direction, and a value of zero stops the motor. |
-| Neo Trellis LEDs (_0 ... _15) | Expects an integer from 0-255 to control the led brightness of the corresponding pad. |
+| Stepper Motor | --- | Expects a floating point value of any arbitrary size, representing the number of steps to rotate. The sign of the number determines direction. |
+| Stepper Motor | _release | Triggers the stepper motor to relax its fields when a positive value is received, allowing the motor to spin freely. |
+| DC Motor | --- | Expects a floating point value from -1 to 1. The magnitude controls the speed, the sign controls direction, and a value of zero stops the motor. |
+| Neo Trellis LEDs | _0 ... _15 | Expects an integer from 0-255 to control the led brightness of the corresponding pad. |
 
 # Daisy Board I/O
 
