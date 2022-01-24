@@ -9,7 +9,7 @@ For example, if we wanted to receive a bang when we pressed the button 1 on the 
 
 ## Installation/Setup
 
-1. Test that you have python installed, and that its the proper version. It should be >= 3.7. Test this by running `python --version` on the command line. You may need to use the `python3` command instead for this and following commands.
+1. Test that you have python installed, and that its the proper version. It should be >= 3.8. Test this by running `python --version` on the command line. You may need to use the `python3` command instead for this and following commands.
 2. Clone the repo: `git clone https://github.com/electro-smith/pd2dsy`
 3. Run the `install.sh` script located in the root directory. This should install required python modules, update your libdaisy, and build it for you. It also creates a _virtual environment_, which is a self-contained python environment for specific projects. In order to actually use the python modules you just installed, you'll need to be running from the virtual environment. You can do this by running `./pd_env/bin/activate` (or `source ./pd_env/bin/activate` if you get permission errors).
 4. Install arm-none-eabi-gcc toolchain, make, and dfu-util. There are [OS specific instructions in the Daisy Wiki](https://github.com/electro-smith/DaisyWiki/wiki).
