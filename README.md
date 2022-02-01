@@ -20,8 +20,9 @@ You should now be able to run pd2dsy.py without issue.
 
 After you've made your patch in puredata, you can turn it into cpp by running the command:
 ```python pd2dsy.py --board <BOARD> <FILE>.pd```
-<BOARD> should be replaced with the board you're using (seed, pod, patch).
-<FILE> is the filename of your pd patch.
+
+\<BOARD\> should be replaced with the board you're using (seed, pod, patch).
+\<FILE\> is the filename of your pd patch.
 
 Your patch will be built and uploaded automatically, assuming you have a Daisy in DFU mode plugged into USB. If you'd like to build and upload manually, you can navigate to the folder that it created and run `make`, then `make program-dfu`.
 
