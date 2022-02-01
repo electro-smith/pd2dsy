@@ -53,7 +53,7 @@ Both `--ram` and `--rom` default to `speed`.
 The parent directory of your project can be specified. This is convenient if you'd like to build from somewhere other than your intended project directory, for example:
 
 ~~~bash
-python2 pd2dsy.py -d build path/to/source.pd
+python pd2dsy.py -d build path/to/source.pd
 ~~~
 
 This would place your project in the `build` subdirectory. If it doesn't exist, then pd2dsy will ask if you'd like to create it.
@@ -63,7 +63,7 @@ This would place your project in the `build` subdirectory. If it doesn't exist, 
 pd2dsy generates a number of helpful files that need to know where your libDaisy folder is located. If you don't want to change them all manually, then you can specify how far away the libDaisy folder is from your project folder:
 
 ~~~bash
-python2 pd2dsy.py --libdaisy-depth 2 path/to/source.pd
+python pd2dsy.py --libdaisy-depth 2 path/to/source.pd
 ~~~
 
 This will tell all the project files to look two directories above the current one to find libDaisy (as in `../../libDaisy`). This does require that libDaisy exists in _some_ parent directory of your project, but you can of course specify it manually if you prefer.
