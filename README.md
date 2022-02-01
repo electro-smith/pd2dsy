@@ -2,11 +2,6 @@
 
 Utility for converting Pure Data (Vanilla) patches to Daisy projects.
 
-## Pd Patches
-Board controls can be brought into PD from receive objects.
-For example, if we wanted to receive a bang when we pressed the button 1 on the pod we would use this object:
-```r Button1 @hv_param```
-
 ## Installation/Setup
 
 1. Test that you have python installed, and that its the proper version. It should be >= 3.8. Test this by running `python --version` on the command line. You may need to use the `python3` command instead for this and following commands.
@@ -72,6 +67,8 @@ This will tell all the project files to look two directories above the current o
 # Interacting with the Daisy I/O
 
 Each board has a selection of physical I/O that can interact with your PD patch. Most components have an _alias_, which allows you to refer to the same input/output by different names if you have a preference. All names and aliases are _case insensitive_, so you can style them however you like (e.g. `GateIn`).
+
+Components that act as an input (like a Switch, for example) are accessible with Pd's `receive` object, and require the `@hv_param` attribute in order to be recognized as an external input. If your Switch is named `sw`, then the Pd object would look like `r sw @hv_param`. Outputs, like an LED, use the `send` object (i.e. `s led @hv_param`). The examples make this usage pretty clear.
 
 Some components have _variants_, which allow you to interact with them in multiple ways. For example, you can receive a bang from a `Gate In` instead of a float if you add `_trig` to the end of the gate's name (or any of its aliases). So, if a `Gate In`'s name is `gatein1`, you would use `gatein1_trig`.
 
