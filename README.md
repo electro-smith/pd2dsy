@@ -16,7 +16,7 @@ You should now be able to run pd2dsy.py without issue.
 After you've made your patch in puredata, you can turn it into cpp by running the command:
 ```python pd2dsy.py --board <BOARD> <FILE>.pd```
 
-\<BOARD\> should be replaced with the board you're using (seed, pod, patch).
+\<BOARD\> should be replaced with the board you're using (pod, patch, patch_init, field, petal).
 \<FILE\> is the filename of your pd patch.
 
 Your patch will be built and uploaded automatically, assuming you have a Daisy in DFU mode plugged into USB. If you'd like to build and upload manually, you can navigate to the folder that it created and run `make`, then `make program-dfu`.
@@ -226,10 +226,7 @@ Here's how the newly added sensors are addressed:
 | encoder | --- | Encoder | encoder_press, encoder_rise, encoder_fall, encoder_seconds |
 | led1 | led | RGB LED | led1_red, led1_green, led1_blue, led1_white |
 | led2 | --- | RGB LED | led2_red, led2_green, led2_blue, led2_white |
-| led3 | --- | LED | --- |
-| cvout1 | cvout | CV Out | --- |
 | gatein | gate, gate1 | Gate In | gatein_trig |
-| sw3 | switch3 | SPDT Switch | --- |
 
 ## field
 
@@ -253,8 +250,6 @@ Here's how the newly added sensors are addressed:
 | led_key_a1 ... led_key_a8 | --- | LED | --- |
 | led_key_b1 ... led_key_b8 | --- | LED | --- |
 | led_knob_1 ... led_knob_8 | --- | LED | --- |
-| led_sw_1 | --- | LED | --- |
-| led_sw_2 | --- | LED | --- |
 
 -------------------
 
