@@ -1,24 +1,5 @@
 #!/usr/bin/env python
-#
-# OVERVIEW:
-# - hvcc needs to be run on the input file (with appropriate flags for generating project).
-# - each of the "GENERATE" sections need to do certain things related to the Heavy_<PatchName>.cpp/.hpp generated files
-# - new output folder is created with the puredata files' name, containing new project.
-# - optionally, we could have it build the example after, but that'd require bringing the toolchain along for the ride.
-#
-# * INCLUDES: need to include the generated "Heavy_PatchName.hpp" file
-# * GLOBALS: need to declare Heavy_PatchName object with samplerate set.
-# * AUDIOCALLBACK:
-#     * Send float parameters to Heavy_PatchName object via Heavy_PatchName::sendFloatToReceiver()
-#     * call Heavy_PatchName object's process function
-# * PREINIT: 
-#     * probe Heavy object for number of channels and control data.
-#     * configure Audio for 2 or 4 channel audio depending.
-# * POSTINIT: 
-#     * configure daisy::Parameter objects with same min/max and linear curve settings for passing to Heavy
-#     * sendFloatToReceiver for all defaults.
-#
-#
+
 import os
 import re
 import time
@@ -68,27 +49,20 @@ def main():
 
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
-    parser.add_argument('-b',  '--board', help=f'hardware platform for generated output. The supported boards are: {", ".join(boardlist)}', default='seed')
+    parser.add_argument('-b', '--board', help=f'hardware platform for generated output. The supported boards are: {", ".join(boardlist)}', default=None)
     parser.add_argument('-c', '--custom-json', type=str, help='provide a custom JSON board description', default='')
-    parser.add_argument('-p',  '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
+    parser.add_argument('-p', '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
     parser.add_argument('-d', '--directory', type=str, help="set the parent directory of the output.", default='.')
     parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
     parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
     parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
     parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=1)
     parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
-    # parser.add_argument('--list-boards', help='list boards that have integrated support', action='store_true')
 
     args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
     search_paths = args.search_paths or []
     copyright = ""
-
-    # why can't we have nice things
-    # if args.list_boards:
-    #     boardlist = ['seed', 'patch', 'patch_sm', 'patch_init', 'pod', 'field']
-    #     print(', '.join(boardlist))
-    #     halt()
 
     results = {}
     verbose = False
@@ -116,8 +90,8 @@ def main():
             with open(args.custom_json, 'rb') as file:
                 custom_json = json.load(file)
         except FileNotFoundError:
-            print(f'Error: unable to open custom json file "{args.custom_json}"')
-            sys.exit(1)
+            print(f'{Colours.red}Error:{Colours.end} unable to open custom json file "{args.custom_json}"')
+            halt()
         meta = {"daisy": {"board": custom_json['name'], "board_file": args.custom_json}}
     
     meta_path = os.path.join(os.path.dirname(__file__), "util/daisy.json")
