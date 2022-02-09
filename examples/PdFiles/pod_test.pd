@@ -1,4 +1,4 @@
-#N canvas 4176 1100 1440 679 10;
+#N canvas 4227 1072 1440 679 10;
 #X obj 785 449 dac~;
 #X obj 863 354 osc~;
 #X obj 588 372 osc~;
@@ -55,6 +55,10 @@
 #X msg 891 109 100;
 #X obj 695 357 line~;
 #X obj 972 356 line~;
+#X obj 1066 471 r button1_press @hv_param;
+#X obj 1238 472 r button2_press @hv_param;
+#X obj 1066 537 s led1 @hv_param;
+#X obj 1238 539 s led2 @hv_param;
 #X connect 1 0 5 0;
 #X connect 2 0 3 0;
 #X connect 3 0 0 0;
@@ -106,3 +110,5 @@
 #X connect 48 0 39 0;
 #X connect 49 0 3 1;
 #X connect 50 0 5 1;
+#X connect 51 0 53 0;
+#X connect 52 0 54 0;
