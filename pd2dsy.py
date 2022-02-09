@@ -106,7 +106,11 @@ def main():
     print(f'Generating project in "{output}"')
 
     if args.custom_json == '':
-        meta = {"daisy": {"board": args.board}}
+        if args.board is None:
+            print(f'{Colours.red}Error:{Colours.end} when not using custom JSON (-c), the board must be specified (-b)')
+            halt()
+        else:
+            meta = {"daisy": {"board": args.board}}
     else:
         try:
             with open(args.custom_json, 'rb') as file:
