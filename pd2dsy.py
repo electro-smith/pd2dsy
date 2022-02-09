@@ -64,7 +64,7 @@ def halt():
 def main():
     tick = time.time()
 
-    boardlist = ['patch', 'patch_init', 'pod', 'field']
+    boardlist = ['pod', 'patch', 'patch_init', 'field', 'petal']
 
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
