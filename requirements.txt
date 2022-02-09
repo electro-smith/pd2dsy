@@ -1,2 +1,2 @@
 wheel
-git+https://github.com/CorvusPrudens/hvcc@feature/daisy_json
+es-hvcc-sensors==0.2.1
