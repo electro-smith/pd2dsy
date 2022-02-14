@@ -4,21 +4,37 @@ Utility for converting Pure Data (Vanilla) patches to Daisy projects.
 
 ## Installation/Setup
 
-1. Test that you have python installed, and that its the proper version. It should be >= 3.8. Test this by running `python --version` on the command line. You may need to use the `python3` command instead for this and following commands.
-2. Clone the repo: `git clone https://github.com/electro-smith/pd2dsy`
-3. Run the `install.sh` script located in the root directory. This should install required python modules, update your libdaisy, and build it for you. It also creates a _virtual environment_, which is a self-contained python environment for specific projects. 
-4. In order to actually use the python modules you just installed, you'll need to be running from the virtual environment. On Mac and Linux, you can do this by running `./pd_env/bin/activate` (or `source ./pd_env/bin/activate` if you get permission errors). On Windows, it'll be `./pd_env/Scripts/activate.sh`.
-5. Install arm-none-eabi-gcc toolchain, make, and dfu-util. There are [OS specific instructions in the Daisy Wiki](https://github.com/electro-smith/DaisyWiki/wiki).
+0. pd2dsy is a Command Line Interface (CLI) based program. You'll need to run it from a terminal. On Windows, [Git Bash](https://git-scm.com/downloads) is the recommended choice. For macOS or Linux, you can simply use the terminal bundled with your system.
+1. Test that you have python installed ([here's a little guide](https://wiki.python.org/moin/BeginnersGuide/Download)), and that it's the proper version. It should be >= 3.8. Test this by running `python3 --version` in your terminal.
+    - On Windows, you'll need to use `python` (instead of `python3`), but the installation process can be tricky. Even if you've installed the latest version, you might have issues actually running it with `python`. (You might be able to use `py`, but this project expects `python` on Windows, and therefore the `install.sh` script won't work.) If you've installed python, and running the command `python` doesn't work correctly, you'll need to adjust you system `PATH` variables. By default, Windows places the Microsoft store paths before any others, and the store has a `python.exe` program that simply opens up their python store page. Unfortunately, installing via the store will cause problems with normal python use, so you'll need the path pointing to your actual python install above Microsoft's. To do this:
+        - Type in "path" in the windows search bar and click on the "Edit the system environment variables" tile
+        - In the "System Properties" window, click the "Environment Variables" button 
+        - Double click the user varible labeled "Path"
+        - Select the real python install (probably something like `C:/Program Files/Python310`) and click the "Move Up" button until that path is on top
+        - Click okay, apply changes, and close and reopen any terminals. Typing in `python` should now bring up the normal python prompt (`>>>`).
+2. Ensure that you have `git` installed. On Windows, git will be installed with the "Git for Windows" package that installs git bash. On macOS, the easiest way is probably installing via [Homebrew](https://brew.sh/) (`brew install git`).
+3. Clone the repository with `git clone https://github.com/electro-smith/pd2dsy`
+4. Navigate into the cloned repository (`cd pd2dsy`)
+5. Type in `./install.sh` and hit enter (make sure you're in the root directry of the project). This should install required python modules, update your libdaisy, and build it for you. It also creates a _virtual environment_, which is a self-contained python environment for specific projects.
+6. In order to actually use the python modules you just installed, you'll need to be running from the virtual environment. On Mac and Linux, you can do this by running `source ./pd_env/bin/activate`. On Windows, it'll be `./pd_env/Scripts/activate.sh`.
+
+![venv prompt example](util/venv_screenshot.png?raw=true)
+
+7. Install arm-none-eabi-gcc toolchain, make, and dfu-util. There are [OS specific instructions in the Daisy Wiki](https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment#1-install-the-toolchain).
 
 You should now be able to run pd2dsy.py without issue.
 
 ## Usage
 
 After you've made your patch in puredata, you can turn it into cpp by running the command:
-```python pd2dsy.py --board <BOARD> <FILE>.pd```
+~~~
+python pd2dsy.py --board <BOARD> <FILE>.pd
+~~~
 
 \<BOARD\> should be replaced with the board you're using (pod, patch, patch_init, field, petal).
 \<FILE\> is the filename of your pd patch.
+
+Don't forget to activate your virtual environment! (`source ./pd_env/bin/activate` on macOS,  `./pd_env/Scripts/activate.sh` on Windows)
 
 Your patch will be built and uploaded automatically, assuming you have a Daisy in DFU mode plugged into USB. If you'd like to build and upload manually, you can navigate to the folder that it created and run `make`, then `make program-dfu`.
 
