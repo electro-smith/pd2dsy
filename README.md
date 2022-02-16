@@ -21,7 +21,7 @@ At this point you should be ready to use the tool!
 The first time you start a new session and want to use pd2dsy you will have to activate your virtual environment. This essentially loads a version of python with all of the specific libraries ready to go:
 
 * On Mac OS / Linux: `source ./pd_env/bin/activate` 
-* On Windows (from git-bash): `./pd_env/Scripts/activate`
+* On Windows (from git-bash): `source ./pd_env/Scripts/activate`
 
 Once activated you should see something like:
 
