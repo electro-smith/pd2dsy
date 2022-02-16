@@ -2,8 +2,8 @@
 # GENERATE TARGET
 
 # Library Locations
-LIBDAISY_DIR = ../../libdaisy
-HVCC_DIR = c
+LIBDAISY_DIR = # LIBDAISY DEPTHlibdaisy
+HVCC_DIR = source
 
 # HVCC Sources
 CPP_SOURCES = $(wildcard $(HVCC_DIR)/*.cpp)
@@ -12,6 +12,10 @@ C_SOURCES = $(wildcard $(HVCC_DIR)/*.c)
 
 # Project Source
 CPP_SOURCES += $(TARGET).cpp 
+
+# LINKER
+
+# BOOTLOADER
 
 # Core location, and generic makefile.
 SYSTEM_FILES_DIR = $(LIBDAISY_DIR)/core
