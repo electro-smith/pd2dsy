@@ -21,7 +21,7 @@ At this point you should be ready to use the tool!
 The first time you start a new session and want to use pd2dsy you will have to activate your virtual environment. This essentially loads a version of python with all of the specific libraries ready to go:
 
 * On Mac OS / Linux: `source ./pd_env/bin/activate` 
-* On Windows (from git-bash): `./pd_env/Scripts/activate.sh`
+* On Windows (from git-bash): `./pd_env/Scripts/activate`
 
 Once activated you should see something like:
 
@@ -35,6 +35,7 @@ python pd2dsy.py --board <BOARD> <FILE>.pd
 ~~~
 
 \<BOARD\> should be replaced with the board you're using (pod, patch, patch_init, field, petal).
+
 \<FILE\> is the filename of your pd patch.
 
 Your patch will be built and uploaded automatically, assuming you have a Daisy in DFU mode plugged into USB. If you'd like to build and upload manually, you can navigate to the folder that it created and run `make`, then `make program-dfu`.
