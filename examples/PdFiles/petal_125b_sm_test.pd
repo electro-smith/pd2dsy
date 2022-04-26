@@ -1,4 +1,4 @@
-#N canvas 6308 1010 933 576 12;
+#N canvas 5863 1036 933 575 12;
 #X obj 21 24 adc~;
 #X obj 42 448 dac~;
 #X obj 43 105 delwrite~ \$0-delay 1000;
@@ -30,6 +30,16 @@
 #X obj 426 171 0;
 #X text 513 97 The LED will light up when digital audio is active and
 go dark when the relay bypasses the digital path.;
+#X obj 191 524 s led3_red @hv_param;
+#X obj 348 524 s led3_green @hv_param;
+#X obj 518 523 s led3_blue @hv_param;
+#X obj 191 436 r toggle_3 @hv_param;
+#X obj 694 429 r toggle_2 @hv_param;
+#X obj 694 523 s led2 @hv_param;
+#X obj 694 477 != 0;
+#X obj 191 481 == 1;
+#X obj 348 480 == 2;
+#X obj 518 480 == 0;
 #X connect 0 0 16 0;
 #X connect 0 0 3 0;
 #X connect 3 0 7 0;
@@ -58,3 +68,11 @@ go dark when the relay bypasses the digital path.;
 #X connect 25 0 23 0;
 #X connect 26 0 27 0;
 #X connect 27 0 20 0;
+#X connect 32 0 36 0;
+#X connect 32 0 37 0;
+#X connect 32 0 38 0;
+#X connect 33 0 35 0;
+#X connect 35 0 34 0;
+#X connect 36 0 29 0;
+#X connect 37 0 30 0;
+#X connect 38 0 31 0;
