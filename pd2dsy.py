@@ -168,6 +168,12 @@ def main():
     petal_h = os.path.join(os.path.dirname(__file__), "util/daisy_petal_125b_sm.h")
     shutil.copy2(petal_cpp, output)
     shutil.copy2(petal_h, output)
+
+    # Copy over debug
+    debug_src = os.path.join(os.path.dirname(__file__), "util/vscode")
+    debug_dest = os.path.join(output, '.vscode')
+    shutil.copytree(debug_src, debug_dest, dirs_exist_ok=True)
+
     # delete unused folders
     shutil.rmtree(os.path.join(output, 'c'))
     shutil.rmtree(os.path.join(output, 'hv'))
@@ -191,6 +197,15 @@ def main():
     if main_file is not None:
         shutil.move(os.path.join(output, 'source', main_file), os.path.join(output, main_file))
         os.unlink(os.path.join(output, 'source', 'Makefile'))
+
+        for path in os.listdir(debug_dest):
+            with open(os.path.join(debug_dest, path), 'r') as file:
+                data = file.read()
+            
+            with open(os.path.join(debug_dest, path), 'w') as file:
+                data = data.replace('# GENERATE TARGET', f'{target}')
+                data = data.replace('# LIBDAISY DEPTH', '../'*args.libdaisy_depth)
+                file.write(data)
 
         makefile_path = os.path.join(os.path.dirname(__file__), 'util', 'Makefile')
         with open(makefile_path, 'r') as file:
