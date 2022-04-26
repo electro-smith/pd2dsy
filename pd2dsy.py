@@ -45,7 +45,7 @@ def halt():
 def main():
     tick = time.time()
 
-    boardlist = ['pod', 'patch', 'patch_init', 'field', 'petal']
+    boardlist = ['pod', 'patch', 'patch_init', 'field', 'petal', 'petal_125b_sm']
 
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
     parser.add_argument('pd_input', help='path to puredata file.')
@@ -163,6 +163,11 @@ def main():
 
     # Reorganize project structure to be more friendly
 
+    # Add in temporary petal files
+    petal_cpp = os.path.join(os.path.dirname(__file__), "util/daisy_petal_125b_sm.cpp")
+    petal_h = os.path.join(os.path.dirname(__file__), "util/daisy_petal_125b_sm.h")
+    shutil.copy2(petal_cpp, output)
+    shutil.copy2(petal_h, output)
     # delete unused folders
     shutil.rmtree(os.path.join(output, 'c'))
     shutil.rmtree(os.path.join(output, 'hv'))
