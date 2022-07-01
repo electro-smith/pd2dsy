@@ -1,103 +1,16 @@
-import os
+from sys import platform
+import threading
 import tkinter as tk
 from tkinter import ttk
-from tkinter import filedialog
 import sv_ttk
 import darkdetect
 
 import pd2dsy
+import dsy_gui
 
-
-class FileBrowserWrapper:
-
-    def __init__(self, frame, column, row, label_text, callback=None, files=True, multiple=False, disable_input=True):
-        ttk.Label(frame, text=label_text).grid(column=column, row=row, sticky=tk.W)
-
-        self.text_var = tk.StringVar()
-        self.text_box = ttk.Entry(frame, width=16, textvariable=self.text_var)
-        if disable_input:
-            self.text_box.config(state='readonly')
-        self.text_box.grid(column=column, row=row + 1, sticky=(tk.W, tk.E))
-
-        self.browse = ttk.Button(frame, text="Browse", command=self.browse_callback)
-        self.browse.grid(column=column + 1, row=row + 1, sticky=tk.W)
-
-        self.open_files = files
-        self.open_multiple = multiple
-        self.callback = callback
-
-        self.call_matrix = {
-            (False, False): filedialog.askdirectory,
-            (False, True): filedialog.askdirectory,
-            (True, False): filedialog.askopenfilename,
-            (True, True): filedialog.askopenfilenames
-        }
-
-        self.full_path = ''
-
-    def browse_callback(self, *args):
-        return_value = self.call_matrix[(self.open_files, self.open_multiple)]()
-        if self.callback is not None:
-            self.callback(return_value)
-        self.full_path = return_value
-        display_name = os.path.basename(self.full_path)
-        self.text_var.set(display_name)
-
-    def get_value(self):
-        return self.full_path
-
-
-class OptionWrapper:
-
-    def __init__(self, frame, column, row, label_text, options):
-        self.variable = tk.StringVar(frame)
-        self.variable.set(options[0])
-
-        self.label =  ttk.Label(frame, text=label_text).grid(column=column, row=row, sticky=tk.W)
-        self.dropdown = ttk.OptionMenu(frame, self.variable, *options)
-        self.dropdown.grid(column=column, row=row + 1, sticky=tk.W)
-
-    def get_value(self):
-        return self.variable.get()
-
-class RadioWrapper:
-
-    def __init__(self, frame, column, row, label_text, options):
-        ttk.Label(frame, text=label_text).grid(column=column, row=row, sticky=tk.W)
-
-        self.variable = tk.StringVar(frame)
-        self.variable.set(options[0])
-
-        for i, option in zip(range(len(options)), options):
-            button = ttk.Radiobutton(frame, text=option, value=option, variable=self.variable)
-            button.grid(column=column, row=row + 1 + i, sticky=tk.W)
-
-    def get_value(self):
-        return self.variable.get()
-
-class ButtonWrapper:
-
-    def __init__(self, frame, column, row, label_text, callback):
-
-        self.browse = ttk.Button(frame, text=label_text, command=self.action_callback)
-        self.browse.grid(column=column, row=row, sticky=tk.W)
-
-        self.callback = callback
-
-    def action_callback(self, *args):
-        self.callback()
-
-
-class TextFieldWrapper:
-
-    def __init__(self, frame):
-
-        self.field = tk.Text(frame, bg='black', fg='white', height=10, width=10, state='disabled')
-        self.field.pack(fill=tk.BOTH, expand=True)
-
+USE_DARK_THEME = darkdetect.isDark() and not (platform == 'linux')
 
 root = tk.Tk()
-root.title("pd2dsy")
 
 upper_frame = ttk.Frame(root, padding="3 3 12 12")
 lower_frame = ttk.Frame(root, padding="5 5 5 5")
@@ -109,44 +22,41 @@ upper_frame.pack(fill=tk.BOTH, expand=False)
 lower_frame.pack(fill=tk.BOTH, expand=True)
 status_frame.pack(fill=tk.BOTH, anchor=tk.S)
 
-def dummy():
-    pass
-
 # Top bar
 menubar = tk.Menu(root)
 filemenu = tk.Menu(menubar, tearoff=0)
-filemenu.add_command(label="New", command=dummy)
-filemenu.add_command(label="Open", command=dummy)
-filemenu.add_command(label="Save", command=dummy)
-filemenu.add_separator()
-filemenu.add_command(label="Exit", command=root.quit)
+project_manager = dsy_gui.ProjectManager(root, filemenu, window_title='pd2dsy')
 menubar.add_cascade(label="File", menu=filemenu)
 
 helpmenu = tk.Menu(menubar, tearoff=0)
-helpmenu.add_command(label="Help Index", command=dummy)
-helpmenu.add_command(label="About...", command=dummy)
+helpmenu.add_command(label="Help Index", command=lambda: 0)
+helpmenu.add_command(label="About...", command=lambda: 0)
 menubar.add_cascade(label="Help", menu=helpmenu)
 
+# Status bar
+status_bar = dsy_gui.StatusBarWrapper(status_frame, darktheme_override=USE_DARK_THEME)
+
 # Main UI elements
-pd_browser = FileBrowserWrapper(upper_frame, 0, 0, 'Pd File')
+pd_browser = dsy_gui.FileBrowserWrapper(upper_frame, 0, 0, 'Pd File', id='w1')
 
 board_dropdown_options = pd2dsy.BOARDLIST
 board_dropdown_options.append('custom')
 board_dropdown_options = [name.replace('_', ' ').capitalize() for name in board_dropdown_options]
 board_dropdown_translation = {name: original for name, original in zip(board_dropdown_options, pd2dsy.BOARDLIST)}
 
-board_dropdown = OptionWrapper(upper_frame, 0, 2, 'Board', board_dropdown_options)
+board_dropdown = dsy_gui.OptionWrapper(upper_frame, 0, 2, 'Board', board_dropdown_options, id='w2')
 
-ram_options = RadioWrapper(upper_frame, 0, 4, 'RAM Option', ('Speed', 'Size'))
-rom_options = RadioWrapper(upper_frame, 1, 4, 'ROM Option', ('Speed', 'Size'))
+ram_options = dsy_gui.RadioWrapper(upper_frame, 0, 4, 'RAM Option', ('Speed', 'Size'), id='w3')
+rom_options = dsy_gui.RadioWrapper(upper_frame, 1, 4, 'ROM Option', ('Speed', 'Size'), id='w4')
 
-output_browser = FileBrowserWrapper(upper_frame, 0, 7, 'Output Folder', files=False)
+output_browser = dsy_gui.FileBrowserWrapper(upper_frame, 0, 7, 'Output Folder', files=False, id='w5')
 
 # libdaisy_browser = FileBrowserWrapper(upper_frame, 3, 0, 'libDaisy Folder', files=False)
-json_browser = FileBrowserWrapper(upper_frame, 3, 0, 'Custom JSON')
+json_browser = dsy_gui.FileBrowserWrapper(upper_frame, 3, 0, 'Custom JSON', id='w6')
 
+terminal_output = dsy_gui.TextFieldWrapper(lower_frame)
 
-def compile():
+def compile_thread():
     inputs = {
         'pd_input': pd_browser.get_value(),
         'board': board_dropdown_translation[board_dropdown.get_value()],
@@ -160,31 +70,35 @@ def compile():
         'no_build': False,
     }
     args = pd2dsy.InputObject(**inputs)
-    pd2dsy.main(args)
+    try:
+        pd2dsy.main(args)
+    except Exception as e:
+        terminal_output.append(str(e) + '\n')
 
+def compile():
+    thread = threading.Thread(target=compile_thread)
+    thread.start()
 
-compile_button = ButtonWrapper(upper_frame, 0, 9, 'Compile & Flash', compile)
-
-terminal_output = TextFieldWrapper(lower_frame)
-
-status_bar = ttk.Label(status_frame, text="This is the status", anchor=tk.W, padding='5 2 5 2')
-status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+compile_button = dsy_gui.ButtonWrapper(upper_frame, 0, 9, 'Compile & Flash', compile)
 
 for child in upper_frame.winfo_children():
     child.grid_configure(padx=5, pady=5)
 
+project_manager.set_file_browsers([pd_browser, output_browser, json_browser])
+project_manager.set_saveable_wrappers([pd_browser, output_browser, json_browser, board_dropdown, ram_options, rom_options])
+project_manager.startup()
+
 root.config(menu=menubar)
 
-if darkdetect.isDark():
+if USE_DARK_THEME:
     sv_ttk.use_dark_theme()
-    status_bar.config(background="#303030")
 else:
     sv_ttk.use_light_theme()
-    status_bar.config(background="#AAAAAA")
 
 root.update()
 root.update()
 # After one update cycle, we can set the initial rendered size as the minimum
-root.minsize(root.winfo_width(), root.winfo_height())
+# root.minsize(root.winfo_width(), root.winfo_height())
+root.minsize(500, 500)
 
 root.mainloop()
