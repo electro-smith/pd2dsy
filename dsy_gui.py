@@ -1,0 +1,359 @@
+import os
+import json
+from sys import platform
+import tkinter as tk
+from tkinter import ttk
+from tkinter import filedialog
+from tkinter import messagebox
+import darkdetect
+
+class SaveableWrapper:
+
+    def __init__(self, id=None):
+        self.variable = tk.StringVar()
+        self.id = id
+
+    def get_value(self):
+        return self.variable.get()
+
+    def load_from_save(self, value):
+        self.variable.set(value)
+
+    def reset_state(self):
+        pass
+
+
+class FileBrowserWrapper(SaveableWrapper):
+
+    def __init__(self, frame, column, row, label_text, callback=None, files=True, multiple=False, disable_input=True, **kwargs):
+        super().__init__(**kwargs)
+        ttk.Label(frame, text=label_text).grid(column=column, row=row, sticky=tk.W)
+
+        self.variable = tk.StringVar()
+        self.display_variable = tk.StringVar()
+        self.text_box = ttk.Entry(frame, width=16, textvariable=self.display_variable)
+        if disable_input:
+            self.text_box.config(state='readonly')
+        self.text_box.grid(column=column, row=row + 1, sticky=(tk.W, tk.E))
+
+        self.browse = ttk.Button(frame, text="Browse", command=self.update_callback)
+        self.browse.grid(column=column + 1, row=row + 1, sticky=tk.W)
+
+        self.open_files = files
+        self.open_multiple = multiple
+        self.callback = callback
+
+        self.call_matrix = {
+            (False, False): filedialog.askdirectory,
+            (False, True): filedialog.askdirectory,
+            (True, False): filedialog.askopenfilename,
+            (True, True): filedialog.askopenfilenames
+        }
+
+        self.initial_path = None
+        self.initial_interaction = False
+
+    def update_callback(self, *args):
+        return_value = self.call_matrix[(self.open_files, self.open_multiple)]()
+        if return_value:
+            if self.callback is not None:
+                self.callback(return_value)
+            self.variable.set(return_value)
+            display_name = os.path.basename(return_value)
+            self.display_variable.set(display_name)
+
+    def load_from_save(self, value):
+        self.variable.set(value)
+        display_name = os.path.basename(value)
+        self.display_variable.set(display_name)
+
+    def reset_state(self):
+        self.variable.set('')
+        self.display_variable.set('')
+
+
+class OptionWrapper(SaveableWrapper):
+
+    def __init__(self, frame, column, row, label_text, options, **kwargs):
+        super().__init__(**kwargs)
+        self.options = options
+        self.variable = tk.StringVar(frame)
+        self.variable.set(options[0])
+
+        self.label =  ttk.Label(frame, text=label_text).grid(column=column, row=row, sticky=tk.W)
+        self.dropdown = ttk.OptionMenu(frame, self.variable, *options)
+        self.dropdown.grid(column=column, row=row + 1, sticky=tk.W)
+
+    def load_from_save(self, value):
+        if value in self.options:
+            self.variable.set(value)
+
+    def reset_state(self):
+        self.variable.set(self.options[0])
+
+
+class RadioWrapper(SaveableWrapper):
+
+    def __init__(self, frame, column, row, label_text, options, **kwargs):
+        super().__init__(**kwargs)
+        self.options = options
+        ttk.Label(frame, text=label_text).grid(column=column, row=row, sticky=tk.W)
+
+        self.variable = tk.StringVar(frame)
+        self.variable.set(options[0])
+
+        for i, option in zip(range(len(options)), options):
+            button = ttk.Radiobutton(frame, text=option, value=option, variable=self.variable)
+            button.grid(column=column, row=row + 1 + i, sticky=tk.W)
+
+    def load_from_save(self, value):
+        if value in self.options:
+            self.variable.set(value)
+
+    def reset_state(self):
+        self.variable.set(self.options[0])
+
+
+class ButtonWrapper:
+
+    def __init__(self, frame, column, row, label_text, callback):
+
+        self.browse = ttk.Button(frame, text=label_text, command=self.action_callback)
+        self.browse.grid(column=column, row=row, sticky=tk.W)
+
+        self.callback = callback
+
+    def action_callback(self, *args):
+        self.callback()
+
+
+class TextFieldWrapper:
+
+    def __init__(self, frame):
+
+        self.field = tk.Text(frame, bg='black', fg='white', height=10, width=10, insertontime=0)
+        self.field.pack(fill=tk.BOTH, expand=True)
+
+        self.scrollbar = ttk.Scrollbar(self.field)
+        self.scrollbar.pack(side = 'right',fill='y')
+        self.scrollbar.config(command=self.field.yview)
+        self.field.config(yscrollcommand=self.scrollbar.set)
+
+        # kill all events that can change the text,
+        # including all typing (even shortcuts for
+        # copy and select all)
+        self.field.bind("<<Cut>>", self.kill_event)
+        self.field.bind("<<Paste>>", self.kill_event)
+        self.field.bind("<<Paste-Selection>>", self.kill_event)
+        self.field.bind("<<Clear>>", self.kill_event)
+        self.field.bind("<Key>", self.kill_event)
+        # restore copy and select all
+        for evt in self.field.event_info("<<Copy>>"):
+            self.field.bind(evt, self.do_copy)
+        for evt in self.field.event_info("<<Select-All>>"):
+            self.field.bind(evt, self.do_select_all)
+
+    def append(self, line):
+        sticky = self.scrollbar.get()[1] >= 0.99
+        self.field.insert(tk.END, line)
+        if sticky:
+            self.field.see(tk.END)
+
+    def kill_event(self, evt):
+        return 'break'
+
+    def do_copy(self, evt):
+        self.field.event_generate('<<Copy>>')
+
+    def do_select_all(self, evt):
+        self.field.event_generate('<<Select-All>>')
+
+
+class ProjectManager:
+
+    def __init__(self, root, menu, configuration_file="config.json", window_title="Program"):
+
+        modifier = 'Cmd' if platform == 'darwin' else 'Ctrl'
+
+        menu.add_command(label="New", command=self.operation_new, accelerator=f'{modifier}+N')
+        menu.add_command(label="Open", command=self.operation_open, accelerator=f'{modifier}+O')
+        menu.add_command(label="Save", command=self.operation_save, accelerator=f'{modifier}+S')
+        menu.add_command(label="Save as...", command=self.operation_save_as, accelerator=f'{modifier}+Shift+S')
+
+        self.root = root
+        self.window_title = window_title
+
+        self.configuration_file = configuration_file
+        self.config = {
+            "current_project_path": None,
+            "last_open_path": None,
+            "last_save_as_path": None,
+        }
+
+        root.protocol('WM_DELETE_WINDOW', self.on_close)
+        self.current_project = None
+        self.unchanged_settings = {}
+
+        self.saveable_wrappers = []
+        self.fb_wrappers = []
+
+    def set_file_browsers(self, fb_wrappers):
+        self.fb_wrappers = fb_wrappers
+        for wrapper in self.fb_wrappers:
+            self.config[wrapper.id] = None
+
+    def set_saveable_wrappers(self, saveable_wrappers):
+        self.saveable_wrappers = saveable_wrappers
+        for obj in self.saveable_wrappers:
+            obj.variable.trace_add("write", self.update_project_state)
+
+    def startup(self):
+        try:
+            with open(self.configuration_file, 'r') as file:
+                config_data = json.load(file)
+                for key, item in config_data.items():
+                    self.config[key] = item
+
+                if self.config['current_project_path'] is not None:
+                    self.load_project(self.config['current_project_path'])
+                else:
+                    self.set_unchanged()
+                    self.update_project_state()
+        except FileNotFoundError:
+            pass
+
+    def set_unchanged(self):
+        self.unchanged_settings = self.get_save_dict()
+
+    def get_unchanged(self):
+        current_settings = self.get_save_dict()
+        for id, value in current_settings.items():
+            original = self.unchanged_settings.get(id, None)
+            if original != value:
+                return False
+        return True
+
+    def update_project_state(self, *args):
+        project_title = self.config['current_project_path']
+        if self.config['current_project_path'] is None:
+            project_title = 'Untitled Project'
+        else:
+            project_title = os.path.basename(self.config['current_project_path']).replace('.pd2dsy', '')
+        unchanged_character = '' if self.get_unchanged() else '●'
+        self.root.title(f'{unchanged_character} {project_title} - {self.window_title}')
+
+    def reset_objects(self):
+        for obj in self.saveable_wrappers:
+            obj.reset_state()
+
+    def ask_to_save(self):
+        if not self.get_unchanged():
+            return messagebox.askyesnocancel('Save changes', 'Would you like to save your changes?')
+        return False
+
+    def get_save_dict(self):
+        return {obj.id: obj.get_value() for obj in self.saveable_wrappers}
+
+    def save_config(self):
+        try:
+            with open(self.configuration_file, 'w') as file:
+                json.dump(self.config, file)
+        except OSError as e:
+            raise e
+
+    def save_project(self, save_path):
+        try:
+            with open(save_path, 'w') as file:
+                d = self.get_save_dict()
+                print(d)
+                json.dump(self.get_save_dict(), file)
+            self.config['current_project_path'] = save_path
+            self.save_config()
+            self.set_unchanged()
+            self.update_project_state()
+        except OSError as e:
+            raise e
+
+    def load_project(self, load_path):
+        try:
+            with open(load_path, 'r') as file:
+                project_data = json.load(file)
+                wrappers_as_dict = {w.id: w for w in self.saveable_wrappers}
+                for id, value in project_data.items():
+                    wrappers_as_dict[id].load_from_save(value)
+                self.config['current_project_path'] = load_path
+        except FileNotFoundError as e:
+            self.config['current_project_path'] = None
+            self.reset_objects()
+
+        self.save_config()
+        self.set_unchanged()
+        self.update_project_state()
+
+    def operation_new(self):
+        save_status = self.ask_to_save()
+        if save_status is None:
+            return
+
+        if save_status:
+            self.operation_save()
+
+        self.config['current_project_path'] = None
+        self.save_config()
+        self.reset_objects()
+        self.set_unchanged()
+        self.update_project_state()
+
+    def operation_open(self):
+        save_status = self.ask_to_save()
+        if save_status is None:
+            return
+
+        if save_status:
+            self.operation_save()
+        else:
+            file_path = filedialog.askopenfilename(filetypes=(('pd2dsy project', '*.pd2dsy'), ('all files', '*.*')))
+            if file_path:
+                self.load_project(file_path)
+
+    def operation_save(self):
+        if self.config['current_project_path'] is None:
+            self.operation_save_as()
+        else:
+            self.save_project(self.config['current_project_path'])
+
+    def operation_save_as(self):
+        file_path = filedialog.asksaveasfilename(filetypes=(('pd2dsy project', '*.pd2dsy'), ('all files', '*.*')))
+        if file_path:
+            self.save_project(file_path)
+
+    def on_close(self):
+        save_status = self.ask_to_save()
+        if save_status is None:
+            return
+
+        if save_status:
+            self.operation_save()
+            self.save_config()
+        else:
+            self.save_config()
+
+        self.root.destroy()
+
+
+class StatusBarWrapper:
+    def __init__(self, frame, darktheme_override=None):
+        self.status_bar = ttk.Label(frame, text="", anchor=tk.W, padding='5 2 5 2')
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        darktheme_var = darkdetect.isDark()
+        if darktheme_override is not None:
+            darktheme_var = darktheme_override
+
+        if darktheme_var:
+            self.status_bar.config(background="#303030")
+        else:
+            self.status_bar.config(background="#CCCCCC")
+
+    def set_value(self, value):
+        self.status_bar.config(text=value)
