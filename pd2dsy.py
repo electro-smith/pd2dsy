@@ -10,6 +10,8 @@ import subprocess
 import shutil
 import hvcc
 
+BOARDLIST = ['pod', 'patch', 'patch_init', 'field', 'petal']
+
 class Colours:
     purple = "\033[95m"
     cyan = "\033[96m"
@@ -21,6 +23,19 @@ class Colours:
     bold = "\033[1m"
     underline = "\033[4m"
     end = "\033[0m"
+
+class InputObject:
+    def __init__(self, pd_input, **kwargs):
+        self.pd_input = pd_input
+        self.board = kwargs.get('board', BOARDLIST[0])
+        self.custom_json = kwargs.get('custom_json', None)
+        self.search_paths = kwargs.get('search_paths', None)
+        self.directory = kwargs.get('directory', None)
+        self.force = kwargs.get('force', False)
+        self.ram = kwargs.get('ram', 'speed')
+        self.rom = kwargs.get('rom', 'speed')
+        self.libdaisy_depth = kwargs.get('libdaisy_depth', 1)
+        self.no_build = kwargs.get('no_build', False)
 
 # # Note -- this probably already exists as a module, but here's mine
 def queryUser(prompt, fallback='n'):
@@ -42,24 +57,9 @@ def halt():
     print('No files generated.')
     sys.exit(1)
 
-def main():
+def main(args):
     tick = time.time()
 
-    boardlist = ['pod', 'patch', 'patch_init', 'field', 'petal']
-
-    parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
-    parser.add_argument('pd_input', help='path to puredata file.')
-    parser.add_argument('-b', '--board', help=f'hardware platform for generated output. The supported boards are: {", ".join(boardlist)}', default=None)
-    parser.add_argument('-c', '--custom-json', type=str, help='provide a custom JSON board description', default='')
-    parser.add_argument('-p', '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
-    parser.add_argument('-d', '--directory', type=str, help="set the parent directory of the output.", default='.')
-    parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
-    parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
-    parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
-    parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=1)
-    parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
-
-    args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
     search_paths = args.search_paths or []
     copyright = ""
@@ -93,7 +93,7 @@ def main():
             print(f'{Colours.red}Error:{Colours.end} unable to open custom json file "{args.custom_json}"')
             halt()
         meta = {"daisy": {"board": custom_json['name'], "board_file": args.custom_json}}
-    
+
     meta_path = os.path.join(os.path.dirname(__file__), "util/daisy.json")
     ram_type = args.ram
 
@@ -181,7 +181,7 @@ def main():
             main_file = file
             target = match.group(1)
             break
-    
+
     # If we can find the main file, then we can easily make the project structure even a bit nicer
     if main_file is not None:
         shutil.move(os.path.join(output, 'source', main_file), os.path.join(output, main_file))
@@ -190,7 +190,7 @@ def main():
         makefile_path = os.path.join(os.path.dirname(__file__), 'util', 'Makefile')
         with open(makefile_path, 'r') as file:
             makefile = file.read()
-        
+
         makefile = makefile.replace('# GENERATE TARGET', f'TARGET={target}')
         makefile = makefile.replace('# LIBDAISY DEPTH', '../'*args.libdaisy_depth)
         if meta['daisy'].get('bootloader', False):
@@ -209,7 +209,7 @@ def main():
             else:
                 build_process = subprocess.Popen(f'make -C {output} && make program-dfu -C {output}',
                     shell=True, stderr=subprocess.STDOUT)
-                
+
             build_process.wait()
 
     else:
@@ -222,8 +222,22 @@ def main():
             else:
                 build_process = subprocess.Popen(f'make -C {daisy_src} && make program-dfu -C {daisy_src}',
                     shell=True, stderr=subprocess.STDOUT)
-                
+
             build_process.wait()
 
 if __name__ == "__main__":
-    main()
+
+    parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
+    parser.add_argument('pd_input', help='path to puredata file.')
+    parser.add_argument('-b', '--board', help=f'hardware platform for generated output. The supported boards are: {", ".join(BOARDLIST)}', default=None)
+    parser.add_argument('-c', '--custom-json', type=str, help='provide a custom JSON board description', default='')
+    parser.add_argument('-p', '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
+    parser.add_argument('-d', '--directory', type=str, help="set the parent directory of the output.", default='.')
+    parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
+    parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
+    parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
+    parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=1)
+    parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
+
+    args = parser.parse_args()
+    main(args)
