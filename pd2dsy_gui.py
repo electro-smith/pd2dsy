@@ -33,6 +33,8 @@ helpmenu.add_command(label="Help Index", command=lambda: 0)
 helpmenu.add_command(label="About...", command=lambda: 0)
 menubar.add_cascade(label="Help", menu=helpmenu)
 
+root.config(menu=menubar)
+
 # Status bar
 status_bar = dsy_gui.StatusBarWrapper(status_frame, darktheme_override=USE_DARK_THEME)
 
@@ -87,8 +89,6 @@ for child in upper_frame.winfo_children():
 project_manager.set_file_browsers([pd_browser, output_browser, json_browser])
 project_manager.set_saveable_wrappers([pd_browser, output_browser, json_browser, board_dropdown, ram_options, rom_options])
 project_manager.startup()
-
-root.config(menu=menubar)
 
 if USE_DARK_THEME:
     sv_ttk.use_dark_theme()

@@ -177,8 +177,19 @@ class ProjectManager:
 
         menu.add_command(label="New", command=self.operation_new, accelerator=f'{modifier}+N')
         menu.add_command(label="Open", command=self.operation_open, accelerator=f'{modifier}+O')
+
+        self.menu_recent = tk.Menu(menu, tearoff=False)
+        menu.add_cascade(menu=self.menu_recent, label='Open recent')
+
         menu.add_command(label="Save", command=self.operation_save, accelerator=f'{modifier}+S')
         menu.add_command(label="Save as...", command=self.operation_save_as, accelerator=f'{modifier}+Shift+S')
+
+        modifier = 'Command' if platform == 'darwin' else 'Control'
+
+        root.bind(f'<{modifier}-n>', self.operation_new)
+        root.bind(f'<{modifier}-o>', self.operation_open)
+        root.bind(f'<{modifier}-s>', self.operation_save)
+        root.bind(f'<{modifier}-Shift-KeyPress-S>', self.operation_save_as)
 
         self.root = root
         self.window_title = window_title
@@ -188,6 +199,7 @@ class ProjectManager:
             "current_project_path": None,
             "last_open_path": None,
             "last_save_as_path": None,
+            "recent_paths": [],
         }
 
         root.protocol('WM_DELETE_WINDOW', self.on_close)
@@ -213,6 +225,9 @@ class ProjectManager:
                 config_data = json.load(file)
                 for key, item in config_data.items():
                     self.config[key] = item
+
+                for path in self.config['recent_paths']:
+                    self.menu_recent.add_command(label=path, command=lambda f=path: self.load_project(f))
 
                 if self.config['current_project_path'] is not None:
                     self.load_project(self.config['current_project_path'])
@@ -242,6 +257,18 @@ class ProjectManager:
         unchanged_character = '' if self.get_unchanged() else '●'
         self.root.title(f'{unchanged_character} {project_title} - {self.window_title}')
 
+    def update_recent_files(self, most_recent):
+        if most_recent in self.config['recent_paths']:
+            self.config['recent_paths'].remove(most_recent)
+        self.config['recent_paths'].insert(0, most_recent)
+        if len(self.config['recent_paths']) > 10:
+            self.config['recent_paths'] = self.config['recent_paths'][:10]
+
+        self.menu_recent.delete(0, tk.END)
+
+        for path in self.config['recent_paths']:
+            self.menu_recent.add_command(label=path, command=lambda f=path: self.load_project(f))
+
     def reset_objects(self):
         for obj in self.saveable_wrappers:
             obj.reset_state()
@@ -268,6 +295,7 @@ class ProjectManager:
                 print(d)
                 json.dump(self.get_save_dict(), file)
             self.config['current_project_path'] = save_path
+            self.update_recent_files(save_path)
             self.save_config()
             self.set_unchanged()
             self.update_project_state()
@@ -282,6 +310,7 @@ class ProjectManager:
                 for id, value in project_data.items():
                     wrappers_as_dict[id].load_from_save(value)
                 self.config['current_project_path'] = load_path
+                self.update_recent_files(load_path)
         except FileNotFoundError as e:
             self.config['current_project_path'] = None
             self.reset_objects()
@@ -290,7 +319,7 @@ class ProjectManager:
         self.set_unchanged()
         self.update_project_state()
 
-    def operation_new(self):
+    def operation_new(self, *args):
         save_status = self.ask_to_save()
         if save_status is None:
             return
@@ -304,7 +333,7 @@ class ProjectManager:
         self.set_unchanged()
         self.update_project_state()
 
-    def operation_open(self):
+    def operation_open(self, *args):
         save_status = self.ask_to_save()
         if save_status is None:
             return
@@ -316,13 +345,14 @@ class ProjectManager:
             if file_path:
                 self.load_project(file_path)
 
-    def operation_save(self):
+    def operation_save(self, *args):
         if self.config['current_project_path'] is None:
             self.operation_save_as()
         else:
-            self.save_project(self.config['current_project_path'])
+            if not self.get_unchanged():
+                self.save_project(self.config['current_project_path'])
 
-    def operation_save_as(self):
+    def operation_save_as(self, *args):
         file_path = filedialog.asksaveasfilename(filetypes=(('pd2dsy project', '*.pd2dsy'), ('all files', '*.*')))
         if file_path:
             self.save_project(file_path)
