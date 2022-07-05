@@ -12,7 +12,6 @@ a = Analysis(
         ('libdaisy', 'libdaisy'),
         ('examples', 'examples'),
         ('util', 'util'),
-        ('vscode_temp', 'vscode_temp'),
         ('LICENSE', '.'),
         ('build/hvcc/hvcc', 'hvcc'),
         ('build/Sun-Valley-ttk-theme/sun-valley.tcl', 'sv_ttk/'),
