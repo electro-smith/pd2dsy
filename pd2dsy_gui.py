@@ -139,6 +139,8 @@ def compile_thread():
         # terminal_output.append('\n')
         return
 
+    terminal_output.append('Compiling...\n')
+
     args = pd2dsy.InputObject(**inputs)
     try:
         pd2dsy.main(args)

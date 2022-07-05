@@ -181,7 +181,7 @@ class ButtonWrapper:
 class TextFieldWrapper:
 
     foreground_color = "#FFFFFF"
-    background_color = "#1e1e1e"
+    background_color = "#101010"
 
     def __init__(self, frame):
 
@@ -271,7 +271,7 @@ class ProjectManager:
             menu.add_cascade(menu=self.menu_examples, label="Examples")
 
             for example in examples:
-                self.menu_examples.add_command(label=example[0], command=lambda f=example[1]: self.load_project(f))
+                self.menu_examples.add_command(label=example[0], command=lambda f=example[1]: self.load_recent_or_example(f))
 
         modifier = 'Command' if platform == 'darwin' else 'Control'
 
@@ -332,7 +332,7 @@ class ProjectManager:
 
                 if len(self.config['recent_paths']) > 0:
                     for path in self.config['recent_paths']:
-                        self.menu_recent.add_command(label=path, command=lambda f=path: self.load_project(f))
+                        self.menu_recent.add_command(label=path, command=lambda f=path: self.load_recent_or_example(f))
                 else:
                     self.menu_recent.add_command(label="no recent files")
 
@@ -379,7 +379,7 @@ class ProjectManager:
         self.menu_recent.delete(0, tk.END)
 
         for path in self.config['recent_paths']:
-            self.menu_recent.add_command(label=path, command=lambda f=path: self.load_project(f))
+            self.menu_recent.add_command(label=path, command=lambda f=path: self.load_recent_or_example(f))
 
     def reset_objects(self):
         for obj in self.saveable_wrappers:
@@ -387,7 +387,7 @@ class ProjectManager:
 
     def ask_to_save(self, end_message=''):
         if not self.get_unchanged():
-            return messagebox.askyesnocancel(f'Save changes {end_message}', 'Would you like to save your changes?')
+            return messagebox.askyesnocancel('Unsaved Changes', f'Save changes{end_message}?')
         return False
 
     def get_save_dict(self):
@@ -432,8 +432,18 @@ class ProjectManager:
         self.set_unchanged()
         self.update_project_state()
 
+    def load_recent_or_example(self, file):
+        save_status = self.ask_to_save(end_message=' before opening')
+        if save_status is None:
+            return
+
+        if save_status:
+            self.operation_save()
+
+        self.load_project(file)
+
     def operation_new(self, *args):
-        save_status = self.ask_to_save(' before opening new')
+        save_status = self.ask_to_save(' before opening new project')
         if save_status is None:
             return
 
