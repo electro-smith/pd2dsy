@@ -11,6 +11,7 @@ import shutil
 import hvcc
 
 BOARDLIST = ['pod', 'patch', 'patch_init', 'field', 'petal']
+PD2DSY_DIRECTORY = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
 class Colours:
     purple = "\033[95m"
@@ -34,7 +35,7 @@ class InputObject:
         self.force = kwargs.get('force', False)
         self.ram = kwargs.get('ram', 'speed')
         self.rom = kwargs.get('rom', 'speed')
-        self.libdaisy_depth = kwargs.get('libdaisy_depth', 1)
+        self.libdaisy_path = kwargs.get('libdaisy_path', None)
         self.no_build = kwargs.get('no_build', False)
 
 # # Note -- this probably already exists as a module, but here's mine
@@ -70,6 +71,9 @@ def main(args):
     basename = os.path.basename(inpath).split('.')[0]
     parent = args.directory
     output = os.path.join(parent, basename)
+
+    if args.libdaisy_path is None:
+        args.libdaisy_path = os.path.join(PD2DSY_DIRECTORY, 'libdaisy')
 
     if os.path.exists(output) and not args.force:
         if queryUser(f'"{output}" already exists. Overwrite?'):
@@ -192,7 +196,7 @@ def main(args):
             makefile = file.read()
 
         makefile = makefile.replace('# GENERATE TARGET', f'TARGET={target}')
-        makefile = makefile.replace('# LIBDAISY DEPTH', '../'*args.libdaisy_depth)
+        makefile = makefile.replace('# LIBDAISY PATH', args.libdaisy_path)
         if meta['daisy'].get('bootloader', False):
             makefile = makefile.replace('# BOOTLOADER', 'C_DEFS += -DBOOT_APP')
 
@@ -236,7 +240,7 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
     parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
     parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
-    parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=1)
+    parser.add_argument('--libdaisy-path', type=int, help='specify the path to libDaisy (usually not necessary)', default=None)
     parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
 
     args = parser.parse_args()

@@ -2,7 +2,7 @@
 # GENERATE TARGET
 
 # Library Locations
-LIBDAISY_DIR = # LIBDAISY DEPTHlibdaisy
+LIBDAISY_DIR = # LIBDAISY PATH
 HVCC_DIR = source
 
 # HVCC Sources
@@ -11,7 +11,7 @@ C_INCLUDES = -I$(HVCC_DIR)/
 C_SOURCES = $(wildcard $(HVCC_DIR)/*.c)
 
 # Project Source
-CPP_SOURCES += $(TARGET).cpp 
+CPP_SOURCES += $(TARGET).cpp
 
 # LINKER
 
