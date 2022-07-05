@@ -1,2 +1,4 @@
 wheel
 es-hvcc-sensors==0.2.1
+sv_ttk
+darkdetect
