@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import json
 from sys import platform
 import tkinter as tk
@@ -6,6 +7,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 import darkdetect
+
 
 class SaveableWrapper:
 
@@ -25,7 +27,7 @@ class SaveableWrapper:
 
 class FileBrowserWrapper(SaveableWrapper):
 
-    def __init__(self, frame, column, row, label_text, callback=None, files=True, multiple=False, disable_input=True, **kwargs):
+    def __init__(self, frame, column, row, label_text, callback=None, files=True, multiple=False, disable_input=True, filetypes=None, **kwargs):
         super().__init__(**kwargs)
         ttk.Label(frame, text=label_text).grid(column=column, row=row, sticky=tk.W)
 
@@ -52,10 +54,26 @@ class FileBrowserWrapper(SaveableWrapper):
 
         self.initial_path = None
         self.initial_interaction = False
+        self.filetypes = filetypes
+        if not files:
+            self.filetypes = None
+        self.default_dir = None
 
     def update_callback(self, *args):
-        return_value = self.call_matrix[(self.open_files, self.open_multiple)]()
+        kwargs = {}
+        if self.filetypes is not None:
+            kwargs['filetypes'] = self.filetypes
+        if self.default_dir is not None:
+            kwargs['initialdir'] = self.default_dir
+
+        return_value = self.call_matrix[(self.open_files, self.open_multiple)](**kwargs)
+
         if return_value:
+            if self.open_files:
+                self.default_dir = os.path.dirname(os.path.abspath(return_value))
+            else:
+                self.default_dir = os.path.abspath(return_value)
+
             if self.callback is not None:
                 self.callback(return_value)
             self.variable.set(return_value)
@@ -71,18 +89,29 @@ class FileBrowserWrapper(SaveableWrapper):
         self.variable.set('')
         self.display_variable.set('')
 
+    def enable(self, state: bool):
+        new_state = tk.NORMAL if state else tk.DISABLED
+        self.browse.config(state=new_state)
+
 
 class OptionWrapper(SaveableWrapper):
 
-    def __init__(self, frame, column, row, label_text, options, **kwargs):
+    def __init__(self, frame, column, row, label_text, options, callback=None, **kwargs):
         super().__init__(**kwargs)
         self.options = options
         self.variable = tk.StringVar(frame)
         self.variable.set(options[0])
 
+        self.variable.trace_add("write", self.trace_callback)
+        self.callback = callback
+
         self.label =  ttk.Label(frame, text=label_text).grid(column=column, row=row, sticky=tk.W)
-        self.dropdown = ttk.OptionMenu(frame, self.variable, *options)
+        self.dropdown = ttk.OptionMenu(frame, self.variable, options[0], *options)
         self.dropdown.grid(column=column, row=row + 1, sticky=tk.W)
+
+    def trace_callback(self, *args):
+        if self.callback is not None:
+            self.callback(self.variable.get())
 
     def load_from_save(self, value):
         if value in self.options:
@@ -91,10 +120,14 @@ class OptionWrapper(SaveableWrapper):
     def reset_state(self):
         self.variable.set(self.options[0])
 
+    def enable(self, state: bool):
+        new_state = tk.NORMAL if state else tk.DISABLED
+        self.dropdown.config(state=new_state)
+
 
 class RadioWrapper(SaveableWrapper):
 
-    def __init__(self, frame, column, row, label_text, options, **kwargs):
+    def __init__(self, frame, column, row, label_text, options, callback=None, **kwargs):
         super().__init__(**kwargs)
         self.options = options
         ttk.Label(frame, text=label_text).grid(column=column, row=row, sticky=tk.W)
@@ -102,9 +135,18 @@ class RadioWrapper(SaveableWrapper):
         self.variable = tk.StringVar(frame)
         self.variable.set(options[0])
 
+        self.variable.trace_add("write", self.trace_callback)
+        self.callback = callback
+
+        self.buttons = []
         for i, option in zip(range(len(options)), options):
             button = ttk.Radiobutton(frame, text=option, value=option, variable=self.variable)
             button.grid(column=column, row=row + 1 + i, sticky=tk.W)
+            self.buttons.append(button)
+
+    def trace_callback(self, *args):
+        if self.callback is not None:
+            self.callback(self.variable.get())
 
     def load_from_save(self, value):
         if value in self.options:
@@ -113,25 +155,38 @@ class RadioWrapper(SaveableWrapper):
     def reset_state(self):
         self.variable.set(self.options[0])
 
+    def enable(self, state: bool):
+        new_state = tk.NORMAL if state else tk.DISABLED
+        for button in self.buttons:
+            button.config(state=new_state)
+
 
 class ButtonWrapper:
 
     def __init__(self, frame, column, row, label_text, callback):
 
-        self.browse = ttk.Button(frame, text=label_text, command=self.action_callback)
-        self.browse.grid(column=column, row=row, sticky=tk.W)
+        self.button = ttk.Button(frame, text=label_text, command=self.action_callback)
+        self.button.grid(column=column, row=row, sticky=tk.W)
 
         self.callback = callback
 
     def action_callback(self, *args):
         self.callback()
 
+    def enable(self, state: bool):
+        new_state = tk.NORMAL if state else tk.DISABLED
+        self.button.config(state=new_state)
+
 
 class TextFieldWrapper:
 
+    foreground_color = "#FFFFFF"
+    background_color = "#1e1e1e"
+
     def __init__(self, frame):
 
-        self.field = tk.Text(frame, bg='black', fg='white', height=10, width=10, insertontime=0)
+        self.field = tk.Text(frame, bg=self.background_color,
+            fg=self.foreground_color, height=10, width=10, insertontime=0)
         self.field.pack(fill=tk.BOTH, expand=True)
 
         self.scrollbar = ttk.Scrollbar(self.field)
@@ -153,9 +208,29 @@ class TextFieldWrapper:
         for evt in self.field.event_info("<<Select-All>>"):
             self.field.bind(evt, self.do_select_all)
 
-    def append(self, line):
+        self.tags = {}
+
+    def append(self, text, color=foreground_color):
         sticky = self.scrollbar.get()[1] >= 0.99
-        self.field.insert(tk.END, line)
+
+        if color != self.foreground_color:
+            tag_to_use = None
+            for key, item in self.tags.items():
+                if color == item:
+                    tag_to_use = key
+                    break
+
+            if tag_to_use is None:
+                new_tag_name = self.generate_tag_name()
+                self.tags[new_tag_name] = color
+                self.field.tag_configure(new_tag_name, foreground=color)
+                tag_to_use = new_tag_name
+
+            self.field.insert(tk.END, text, tag_to_use)
+
+        else:
+            self.field.insert(tk.END, text)
+
         if sticky:
             self.field.see(tk.END)
 
@@ -168,10 +243,13 @@ class TextFieldWrapper:
     def do_select_all(self, evt):
         self.field.event_generate('<<Select-All>>')
 
+    def generate_tag_name(self):
+        return f'tag_{len(self.tags)}'
+
 
 class ProjectManager:
 
-    def __init__(self, root, menu, configuration_file="config.json", window_title="Program"):
+    def __init__(self, root, menu, configuration_file="config.json", window_title="Program", examples=None):
 
         modifier = 'Cmd' if platform == 'darwin' else 'Ctrl'
 
@@ -181,8 +259,19 @@ class ProjectManager:
         self.menu_recent = tk.Menu(menu, tearoff=False)
         menu.add_cascade(menu=self.menu_recent, label='Open recent')
 
+        menu.add_separator()
+
         menu.add_command(label="Save", command=self.operation_save, accelerator=f'{modifier}+S')
         menu.add_command(label="Save as...", command=self.operation_save_as, accelerator=f'{modifier}+Shift+S')
+
+        if examples is not None:
+            menu.add_separator()
+
+            self.menu_examples = tk.Menu(menu, tearoff=False)
+            menu.add_cascade(menu=self.menu_examples, label="Examples")
+
+            for example in examples:
+                self.menu_examples.add_command(label=example[0], command=lambda f=example[1]: self.load_project(f))
 
         modifier = 'Command' if platform == 'darwin' else 'Control'
 
@@ -200,6 +289,7 @@ class ProjectManager:
             "last_open_path": None,
             "last_save_as_path": None,
             "recent_paths": [],
+            "file_browser_paths": {},
         }
 
         root.protocol('WM_DELETE_WINDOW', self.on_close)
@@ -212,12 +302,26 @@ class ProjectManager:
     def set_file_browsers(self, fb_wrappers):
         self.fb_wrappers = fb_wrappers
         for wrapper in self.fb_wrappers:
-            self.config[wrapper.id] = None
+            self.config['file_browser_paths'][wrapper.id] = None
 
     def set_saveable_wrappers(self, saveable_wrappers):
         self.saveable_wrappers = saveable_wrappers
         for obj in self.saveable_wrappers:
             obj.variable.trace_add("write", self.update_project_state)
+
+    def initialize_paths(self):
+        home_dir = str(Path.home())
+        if self.config['last_open_path'] is None:
+            self.config['last_open_path'] = home_dir
+        if self.config['last_save_as_path'] is None:
+            self.config['last_save_as_path'] = home_dir
+
+        for browser in self.fb_wrappers:
+            saved_path = self.config['file_browser_paths'].get(browser.id, None)
+            if saved_path is not None:
+                browser.default_dir = saved_path
+            else:
+                browser.default_dir = home_dir
 
     def startup(self):
         try:
@@ -226,8 +330,13 @@ class ProjectManager:
                 for key, item in config_data.items():
                     self.config[key] = item
 
-                for path in self.config['recent_paths']:
-                    self.menu_recent.add_command(label=path, command=lambda f=path: self.load_project(f))
+                if len(self.config['recent_paths']) > 0:
+                    for path in self.config['recent_paths']:
+                        self.menu_recent.add_command(label=path, command=lambda f=path: self.load_project(f))
+                else:
+                    self.menu_recent.add_command(label="no recent files")
+
+                self.initialize_paths()
 
                 if self.config['current_project_path'] is not None:
                     self.load_project(self.config['current_project_path'])
@@ -235,7 +344,10 @@ class ProjectManager:
                     self.set_unchanged()
                     self.update_project_state()
         except FileNotFoundError:
-            pass
+            self.menu_recent.add_command(label="no recent files")
+            self.set_unchanged()
+            self.update_project_state()
+            self.initialize_paths()
 
     def set_unchanged(self):
         self.unchanged_settings = self.get_save_dict()
@@ -273,9 +385,9 @@ class ProjectManager:
         for obj in self.saveable_wrappers:
             obj.reset_state()
 
-    def ask_to_save(self):
+    def ask_to_save(self, end_message=''):
         if not self.get_unchanged():
-            return messagebox.askyesnocancel('Save changes', 'Would you like to save your changes?')
+            return messagebox.askyesnocancel(f'Save changes {end_message}', 'Would you like to save your changes?')
         return False
 
     def get_save_dict(self):
@@ -283,6 +395,8 @@ class ProjectManager:
 
     def save_config(self):
         try:
+            for browser in self.fb_wrappers:
+                self.config['file_browser_paths'][browser.id] = browser.default_dir
             with open(self.configuration_file, 'w') as file:
                 json.dump(self.config, file)
         except OSError as e:
@@ -292,7 +406,6 @@ class ProjectManager:
         try:
             with open(save_path, 'w') as file:
                 d = self.get_save_dict()
-                print(d)
                 json.dump(self.get_save_dict(), file)
             self.config['current_project_path'] = save_path
             self.update_recent_files(save_path)
@@ -320,7 +433,7 @@ class ProjectManager:
         self.update_project_state()
 
     def operation_new(self, *args):
-        save_status = self.ask_to_save()
+        save_status = self.ask_to_save(' before opening new')
         if save_status is None:
             return
 
@@ -334,16 +447,20 @@ class ProjectManager:
         self.update_project_state()
 
     def operation_open(self, *args):
-        save_status = self.ask_to_save()
+        save_status = self.ask_to_save(end_message=' before opening')
         if save_status is None:
             return
 
         if save_status:
             self.operation_save()
-        else:
-            file_path = filedialog.askopenfilename(filetypes=(('pd2dsy project', '*.pd2dsy'), ('all files', '*.*')))
-            if file_path:
-                self.load_project(file_path)
+
+        kwargs = {}
+        if self.config['last_save_as_path'] is not None:
+            kwargs['initialdir'] = self.config['last_save_as_path']
+        file_path = filedialog.askopenfilename(filetypes=(('pd2dsy project', '*.pd2dsy'), ('all files', '*.*')), **kwargs)
+        if file_path:
+            self.config['last_open_path'] = os.path.dirname(os.path.abspath(file_path))
+            self.load_project(file_path)
 
     def operation_save(self, *args):
         if self.config['current_project_path'] is None:
@@ -353,12 +470,16 @@ class ProjectManager:
                 self.save_project(self.config['current_project_path'])
 
     def operation_save_as(self, *args):
-        file_path = filedialog.asksaveasfilename(filetypes=(('pd2dsy project', '*.pd2dsy'), ('all files', '*.*')))
+        kwargs = {}
+        if self.config['last_save_as_path'] is not None:
+            kwargs['initialdir'] = self.config['last_save_as_path']
+        file_path = filedialog.asksaveasfilename(filetypes=(('pd2dsy project', '*.pd2dsy'), ('all files', '*.*')), **kwargs)
         if file_path:
+            self.config['last_save_as_path'] = os.path.dirname(os.path.abspath(file_path))
             self.save_project(file_path)
 
     def on_close(self):
-        save_status = self.ask_to_save()
+        save_status = self.ask_to_save(' before closing')
         if save_status is None:
             return
 
