@@ -38,6 +38,7 @@ class InputObject:
         self.libdaisy_path = kwargs.get('libdaisy_path', None)
         self.no_build = kwargs.get('no_build', False)
         self.log = kwargs.get('log', None)
+        self.flash_bootloader = kwargs.get('flash_bootloader', False)
 
 # # Note -- this probably already exists as a module, but here's mine
 def queryUser(prompt, fallback='n'):
@@ -266,6 +267,28 @@ def flash_project(output, meta, main_file, args):
 
     return return_code, logfile
 
+def flash_bootloader(log):
+    return_code = 0
+    logfile = None
+
+    if log is not None:
+        logfile = open(log, 'a')
+
+    build_process = subprocess.Popen(f'make program-boot -C {os.path.join(PD2DSY_DIRECTORY, "libdaisy", "core")}',
+        shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    for line in build_process.stdout:
+        decoded = line.decode('utf-8')
+        sys.stdout.write(decoded)
+        if logfile:
+            logfile.write(decoded)
+
+    return_code = build_process.wait()
+    if logfile:
+        logfile.close()
+
+    return return_code, logfile
+
 
 def main(args):
     output, meta, linker_file, args = run_hvcc(args)
@@ -280,7 +303,20 @@ def main(args):
 
 if __name__ == "__main__":
 
+    class FlashBootloaderAction(argparse.Action):
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs, nargs=0)
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            return_code, logfile = flash_bootloader(None)
+            if return_code:
+                sys.exit(return_code)
+            parser.exit()
+
     parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
+    parser.register('action', 'flash_bootloader', FlashBootloaderAction)
+
     parser.add_argument('pd_input', help='path to puredata file.')
     parser.add_argument('-b', '--board', help=f'hardware platform for generated output. The supported boards are: {", ".join(BOARDLIST)}', default=None)
     parser.add_argument('-c', '--custom-json', type=str, help='provide a custom JSON board description', default='')
@@ -292,6 +328,8 @@ if __name__ == "__main__":
     parser.add_argument('--libdaisy-path', type=str, help='specify the path to libDaisy (usually not necessary)', default=None)
     parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
     parser.add_argument('--log', type=str, help='print build output to a log file instead of console', default=None)
+    parser.add_argument('--flash-bootloader', help='flash the Daisy bootloader and exit', action='flash_bootloader')
 
     args = parser.parse_args()
+    print(args)
     main(args)
