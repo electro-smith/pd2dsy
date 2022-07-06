@@ -12,6 +12,8 @@ import dsy_gui
 USE_DARK_THEME = darkdetect.isDark() and not (platform == 'linux')
 PROJECT_DIRECTORY = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
+LOG_PATH = os.path.join(PROJECT_DIRECTORY, 'pd2dsy_build.txt')
+
 root = tk.Tk()
 
 upper_frame = ttk.Frame(root, padding="3 3 12 12")
@@ -92,9 +94,46 @@ rom_options = dsy_gui.RadioWrapper(upper_frame, 1, 4, 'ROM Option', ('Speed', 'S
 
 output_browser = dsy_gui.FileBrowserWrapper(upper_frame, 0, 7, 'Output Folder', files=False, id='w5')
 
-def print_error(message):
-    terminal_output.append("Error: ", color="#df3626")
+def print_error(error, message):
+    terminal_output.append('Error: ', color="#df3626")
+    terminal_output.append(error + '\n', color='#59b8f7')
     terminal_output.append(message + '\n')
+
+BUILD_ERRORS = {
+    'cannot find -ldaisy': f"""This probably means you haven't compiled libDaisy.
+The libDaisy folder this program uses is located in {os.path.join(PROJECT_DIRECTORY, 'libdaisy')}.
+If you open this path up in your terminal (type in "cd {os.path.join(PROJECT_DIRECTORY, 'libdaisy')}"
+without the quotes and hit enter), then type in "make" without quotes and hit enter,
+you should be able to build libDaisy without a problem. If you get an error (like "cannot find command make"),
+then you may need to install the Daisy toolchain. Instructions can be found at:
+https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment#1-Install-the-Toolchain""",
+}
+
+NORMAL_FLASH_ERRORS = {
+    'No DFU capable USB device available': f"""This probably means your daisy isn't
+in DFU mode. For the normal system bootloader,
+you can enter DFU mode by holding the BOOT button
+down and then pressing the RESET button. Then once
+you release the RESET button, you can also let go of
+the BOOT button."""
+}
+
+BOOTLOADER_FLASH_ERRORS = {
+
+}
+
+def check_for_common_errors(error_dict, logfile, spurious_errors=['Error during download get_status']):
+    errors = []
+    with open(logfile, 'r') as file:
+        for line in file:
+            for error, response in error_dict.items():
+                if error in line:
+                    errors.append([error, response])
+            for error in spurious_errors:
+                if error in line:
+                    return None
+
+    return errors
 
 def compile_thread():
     inputs = {
@@ -107,24 +146,25 @@ def compile_thread():
         'ram': ram_options.get_value().lower(),
         'rom': rom_options.get_value().lower(),
         'no_build': False,
+        'log': LOG_PATH,
     }
 
     encountered_error = False
 
     # Validate arguments
     if inputs['pd_input'] == '':
-        print_error("please provide an input Pd file.")
+        print_error("file error", "please provide an input Pd file.")
         encountered_error = True
     elif not os.path.exists(inputs['pd_input']):
-        print_error(f"unable to open Pd file at \"{inputs['pd_input']}\"")
+        print_error("file error", f"unable to open Pd file at \"{inputs['pd_input']}\"")
         encountered_error = True
 
     if board_dropdown.get_value() == 'Custom':
         if inputs['custom_json'] == '':
-            print_error("please provide a custom JSON file.")
+            print_error("file error", "please provide a custom JSON file.")
             encountered_error = True
         elif not os.path.exists(inputs['custom_json']):
-            print_error(f"unable to open JSON file at \"{inputs['custom_json']}\"")
+            print_error("file error", f"unable to open JSON file at \"{inputs['custom_json']}\"")
             encountered_error = True
 
     if inputs['directory'] != '':
@@ -143,8 +183,45 @@ def compile_thread():
 
     args = pd2dsy.InputObject(**inputs)
     try:
-        pd2dsy.main(args)
+        output, meta, linker_file, args = pd2dsy.run_hvcc(args)
+        return_code, main_file, logfile = pd2dsy.compile_project(output, meta, linker_file, args)
+        if return_code:
+            errors = check_for_common_errors(BUILD_ERRORS, logfile)
+
+            if errors is not None:
+                if len(errors) == 0:
+                    print_error(f"""unkown error occurred. If your problem persists,
+    check the log file at "{LOG_PATH}"
+    to check for errors and consider posting it
+    to the Daisy Forum.""")
+                else:
+                    for error, response in errors:
+                        print_error(error, response)
+
+                terminal_output.append('\n')
+                return
+
+        terminal_output.append("Flashing Daisy...\n")
+
+        return_code, logfile = pd2dsy.flash_project(output, meta, main_file, args)
+        if return_code:
+            errors = check_for_common_errors(NORMAL_FLASH_ERRORS, logfile)
+            if errors is not None:
+                if len(errors) == 0:
+                    print_error('unkown error', f"""If your problem persists,
+    check the log file at "{LOG_PATH}" to check for errors and consider posting it to the Daisy Forum.""")
+                else:
+                    for error, response in errors:
+                        print_error(error, response)
+
+                terminal_output.append('\n')
+                return
+
+        terminal_output.append('Daisy successfully flashed!\n')
+
     except Exception as e:
+        # An exception almost certainly means an hvcc generated error
+        terminal_output.append('Pd translation error:\n', color="#df3626")
         terminal_output.append(str(e) + '\n')
 
 def compile():

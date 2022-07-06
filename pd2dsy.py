@@ -237,7 +237,7 @@ def compile_project(output, meta, linker_file, args):
         if logfile:
             logfile.close()
 
-    return return_code, main_file, logfile
+    return return_code, main_file, args.log
 
 
 def flash_project(output, meta, main_file, args):
@@ -265,7 +265,7 @@ def flash_project(output, meta, main_file, args):
         if logfile:
             logfile.close()
 
-    return return_code, logfile
+    return return_code, args.log
 
 def flash_bootloader(log):
     return_code = 0
@@ -287,7 +287,7 @@ def flash_bootloader(log):
     if logfile:
         logfile.close()
 
-    return return_code, logfile
+    return return_code, log
 
 
 def main(args):

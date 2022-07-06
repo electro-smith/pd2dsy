@@ -443,7 +443,6 @@ class ProjectManager:
                         if value:
                             proj_path = os.path.dirname(load_path)
                             absolute_path = os.path.abspath(os.path.join(proj_path, value))
-                            print(f'{proj_path} - {value} - {absolute_path}')
                             wrappers_as_dict[id].load_from_save(absolute_path)
                         else:
                             wrappers_as_dict[id].load_from_save(value)
