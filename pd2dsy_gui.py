@@ -92,17 +92,18 @@ If you open this path up in your terminal
 without the quotes and hit enter), then
 type in "make" without quotes and hit enter,
 you should be able to build libDaisy without
-a problem. If you get an error (like "cannot
-find command make"), then you may need to install
-the Daisy toolchain. Instructions can be found at:
-https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment#1-Install-the-Toolchain""",
+a problem.""",
     'region .+? overflowed by .+? bytes': f"""This probably means your Pd patch
 is too large for the settings you've chosen.
 If your ROM option is set to "Speed",
 consider using "Size."
 (If you're already using "Size", post
 about it on the Daisy forum and ask
-for bigger sizes!)"""
+for bigger sizes!)""",
+    '^.+?: .+?: not found': f"""This probably means you
+don't have the Daisy toolchain installed.
+You can find instructions on how to install
+it here: https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment#1-Install-the-Toolchain"""
 }
 
 NORMAL_FLASH_ERRORS = {
