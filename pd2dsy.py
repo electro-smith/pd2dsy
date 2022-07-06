@@ -37,6 +37,7 @@ class InputObject:
         self.rom = kwargs.get('rom', 'speed')
         self.libdaisy_path = kwargs.get('libdaisy_path', None)
         self.no_build = kwargs.get('no_build', False)
+        self.log = kwargs.get('log', None)
 
 # # Note -- this probably already exists as a module, but here's mine
 def queryUser(prompt, fallback='n'):
@@ -54,11 +55,13 @@ def queryUser(prompt, fallback='n'):
             response = input(prompt + 'please provide a valid yes/no input ')
         return True if response.lower().strip() in trueTuple else False
 
+
 def halt():
     print('No files generated.')
     sys.exit(1)
 
-def main(args):
+
+def run_hvcc(args):
     tick = time.time()
 
     inpath = os.path.abspath(args.pd_input)
@@ -165,6 +168,10 @@ def main(args):
     if verbose:
         print("Total compile time: {0:.2f}ms".format(1000 * (time.time() - tick)))
 
+    return output, meta, linker_file, args
+
+
+def compile_project(output, meta, linker_file, args):
     # Reorganize project structure to be more friendly
 
     # delete unused folders
@@ -206,28 +213,70 @@ def main(args):
         with open(os.path.join(output, 'Makefile'), 'w') as file:
             file.write(makefile)
 
-        if not args.no_build:
-            if meta['daisy'].get('bootloader', False):
-                build_process = subprocess.Popen(f'make -C {output} && make program-app -C {output}',
-                    shell=True, stderr=subprocess.STDOUT)
-            else:
-                build_process = subprocess.Popen(f'make -C {output} && make program-dfu -C {output}',
-                    shell=True, stderr=subprocess.STDOUT)
 
-            build_process.wait()
+    # If we weren't able to find the main file, then just resort to normal building
+    daisy_src = output if main_file is not None else os.path.join(output, 'source')
+    logfile = None
+    return_code = 0
 
-    else:
-        # If we weren't able to find the main file, then just resort to normal building
-        if not args.no_build:
-            daisy_src = os.path.join(output, 'source')
-            if meta['daisy'].get('bootloader', False):
-                build_process = subprocess.Popen(f'make -C {daisy_src} && make program-app -C {daisy_src}',
-                    shell=True, stderr=subprocess.STDOUT)
-            else:
-                build_process = subprocess.Popen(f'make -C {daisy_src} && make program-dfu -C {daisy_src}',
-                    shell=True, stderr=subprocess.STDOUT)
+    if not args.no_build:
+        if args.log is not None:
+            logfile = open(args.log, 'w')
 
-            build_process.wait()
+        build_process = subprocess.Popen(f'make -C {daisy_src}',
+            shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        for line in build_process.stdout:
+            decoded = line.decode('utf-8')
+            sys.stdout.write(decoded)
+            if logfile:
+                logfile.write(decoded)
+
+        return_code = build_process.wait()
+        if logfile:
+            logfile.close()
+
+    return return_code, main_file, logfile
+
+
+def flash_project(output, meta, main_file, args):
+
+    daisy_src = output if main_file is not None else os.path.join(output, 'source')
+    pgm_cmd = 'program-app' if meta['daisy'].get('bootloader', False) else 'program-dfu'
+
+    logfile = None
+    return_code = 0
+
+    if not args.no_build:
+        if args.log is not None:
+            logfile = open(args.log, 'a')
+
+        build_process = subprocess.Popen(f'make {pgm_cmd} -C {daisy_src}',
+            shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        for line in build_process.stdout:
+            decoded = line.decode('utf-8')
+            sys.stdout.write(decoded)
+            if logfile:
+                logfile.write(decoded)
+
+        return_code = build_process.wait()
+        if logfile:
+            logfile.close()
+
+    return return_code, logfile
+
+
+def main(args):
+    output, meta, linker_file, args = run_hvcc(args)
+    return_code, main_file, logfile = compile_project(output, meta, linker_file, args)
+    if return_code:
+        sys.exit(return_code)
+
+    return_code, logfile = flash_project(output, meta, main_file, args)
+    if return_code:
+        sys.exit(return_code)
+
 
 if __name__ == "__main__":
 
@@ -240,8 +289,9 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
     parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
     parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
-    parser.add_argument('--libdaisy-path', type=int, help='specify the path to libDaisy (usually not necessary)', default=None)
+    parser.add_argument('--libdaisy-path', type=str, help='specify the path to libDaisy (usually not necessary)', default=None)
     parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
+    parser.add_argument('--log', type=str, help='print build output to a log file instead of console', default=None)
 
     args = parser.parse_args()
     main(args)
