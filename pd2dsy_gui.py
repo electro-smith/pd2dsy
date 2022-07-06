@@ -116,7 +116,7 @@ def compile_thread():
         print_error("please provide an input Pd file.")
         encountered_error = True
     elif not os.path.exists(inputs['pd_input']):
-        print_error("unable to open selected Pd file!")
+        print_error(f"unable to open Pd file at \"{inputs['pd_input']}\"")
         encountered_error = True
 
     if board_dropdown.get_value() == 'Custom':
@@ -124,7 +124,7 @@ def compile_thread():
             print_error("please provide a custom JSON file.")
             encountered_error = True
         elif not os.path.exists(inputs['custom_json']):
-            print_error("unable to open selected JSON file!")
+            print_error(f"unable to open JSON file at \"{inputs['custom_json']}\"")
             encountered_error = True
 
     if inputs['directory'] != '':

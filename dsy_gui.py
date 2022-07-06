@@ -391,7 +391,19 @@ class ProjectManager:
         return False
 
     def get_save_dict(self):
-        return {obj.id: obj.get_value() for obj in self.saveable_wrappers}
+        save_dict = {}
+        for obj in self.saveable_wrappers:
+            if obj in self.fb_wrappers:
+                # Convert project paths to relative for cross-platform compatibility
+                full_path = obj.get_value()
+                if not full_path or self.config['current_project_path'] is None:
+                    save_dict[obj.id] = full_path
+                else:
+                    proj_path = os.path.dirname(self.config['current_project_path'])
+                    save_dict[obj.id] = os.path.relpath(full_path, proj_path)
+            else:
+                save_dict[obj.id] = obj.get_value()
+        return save_dict
 
     def save_config(self):
         try:
@@ -404,10 +416,9 @@ class ProjectManager:
 
     def save_project(self, save_path):
         try:
-            with open(save_path, 'w') as file:
-                d = self.get_save_dict()
-                json.dump(self.get_save_dict(), file)
             self.config['current_project_path'] = save_path
+            with open(save_path, 'w') as file:
+                json.dump(self.get_save_dict(), file)
             self.update_recent_files(save_path)
             self.save_config()
             self.set_unchanged()
@@ -415,13 +426,29 @@ class ProjectManager:
         except OSError as e:
             raise e
 
+    def get_is_fb(self, id):
+        for obj in self.fb_wrappers:
+            if obj.id == id:
+                return True
+        return False
+
     def load_project(self, load_path):
         try:
             with open(load_path, 'r') as file:
                 project_data = json.load(file)
                 wrappers_as_dict = {w.id: w for w in self.saveable_wrappers}
                 for id, value in project_data.items():
-                    wrappers_as_dict[id].load_from_save(value)
+                    if self.get_is_fb(id):
+                        # expand the relative path into a full one
+                        if value:
+                            proj_path = os.path.dirname(load_path)
+                            absolute_path = os.path.abspath(os.path.join(proj_path, value))
+                            print(f'{proj_path} - {value} - {absolute_path}')
+                            wrappers_as_dict[id].load_from_save(absolute_path)
+                        else:
+                            wrappers_as_dict[id].load_from_save(value)
+                    else:
+                        wrappers_as_dict[id].load_from_save(value)
                 self.config['current_project_path'] = load_path
                 self.update_recent_files(load_path)
         except FileNotFoundError as e:
