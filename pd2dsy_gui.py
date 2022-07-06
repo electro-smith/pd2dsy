@@ -1,6 +1,7 @@
 import os
-from sys import platform
+import re
 import threading
+from sys import platform
 import tkinter as tk
 from tkinter import ttk
 import sv_ttk
@@ -75,11 +76,132 @@ ram_options = dsy_gui.RadioWrapper(upper_frame, 0, 4, 'RAM Option', ('Speed', 'S
 
 terminal_output = dsy_gui.TextFieldWrapper(lower_frame)
 
+output_browser = dsy_gui.FileBrowserWrapper(upper_frame, 0, 7, 'Output Folder', files=False, id='w5')
+
+def print_error(error, message):
+    terminal_output.append('Error: ', color="#df3626")
+    terminal_output.append(error + '\n', color='#59b8f7')
+    terminal_output.append(message + '\n')
+
+BUILD_ERRORS = {
+    'cannot find -ldaisy': f"""This probably means you haven't compiled
+libDaisy. The libDaisy folder this program
+uses is located in {os.path.join(PROJECT_DIRECTORY, 'libdaisy')}.
+If you open this path up in your terminal
+(type in "cd {os.path.join(PROJECT_DIRECTORY, 'libdaisy')}"
+without the quotes and hit enter), then
+type in "make" without quotes and hit enter,
+you should be able to build libDaisy without
+a problem. If you get an error (like "cannot
+find command make"), then you may need to install
+the Daisy toolchain. Instructions can be found at:
+https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment#1-Install-the-Toolchain""",
+    'region .+? overflowed by .+? bytes': f"""This probably means your Pd patch
+is too large for the settings you've chosen.
+If your ROM option is set to "Speed",
+consider using "Size."
+(If you're already using "Size", post
+about it on the Daisy forum and ask
+for bigger sizes!)"""
+}
+
+NORMAL_FLASH_ERRORS = {
+    'No DFU capable USB device available': f"""This probably means your daisy isn't
+in DFU mode. For the normal system bootloader,
+you can enter DFU mode by holding the BOOT button
+down and then pressing the RESET button. Then once
+you release the RESET button, you can also let go of
+the BOOT button.""",
+    'Last page at 0x9[A-Fa-f0-9]+? is not writeable': f"""This probably means you're attempting
+to write Daisy Bootloader programs to the
+normal system bootloader (ROM option set to
+size). If you want to flash programs to the
+Daisy bootloader, ensure that you flash the
+bootloader itself first.""",
+    'Last page at 0x08[A-Fa-f0-9]+? is not writeable': f"""This probably means you're attempting
+to write a normal Daisy program to the Daisy
+bootloader. When using the Daisy bootloader,
+make sure your ROM is set to "Size." If you
+don't want to use the Daisy bootloader,
+simply overwrite it with your program by
+entering the normal system bootloader."""
+}
+
+BOOTLOADER_FLASH_ERRORS = {
+    'No DFU capable USB device available': f"""This probably means your daisy isn't
+in DFU mode. For the Daisy bootloader,
+simply restart the device (press and release
+the RESET button) and you'll enter DFU mode.
+It only lasts a couple seconds before entering
+your application, however, so you can extend
+this period by presssing the BOOT button
+shortly after reset. The daisy bootloader
+can be identified by the pulsing USER_LED.""",
+    'Last page at 0x9[A-Fa-f0-9]+? is not writeable': f"""This probably means you're attempting
+to write Daisy Bootloader programs to the
+normal system bootloader (ROM option set to
+size). If you want to flash programs to the
+Daisy bootloader, ensure that you flash the
+bootloader itself first.""",
+    'Last page at 0x08[A-Fa-f0-9]+? is not writeable': f"""This probably means you're attempting
+to write a normal Daisy program to the Daisy
+bootloader. When using the Daisy bootloader,
+make sure your ROM is set to "Size." If you
+don't want to use the Daisy bootloader,
+simply overwrite it with your program by
+entering the normal system bootloader."""
+}
+
+
+def check_for_common_errors(error_dict, logfile, spurious_errors=['Error during download get_status']):
+    errors = []
+
+    compiled_errors = []
+    for error, message in error_dict.items():
+        error_re = re.compile(error)
+        compiled_errors.append([error_re, message])
+
+    compiled_spurious = []
+    for error in spurious_errors:
+        error_re = re.compile(error)
+        compiled_spurious.append(error_re)
+
+    with open(logfile, 'r') as file:
+        for line in file:
+            for error, response in compiled_errors:
+                match = error.search(line)
+                if match is not None:
+                    errors.append([match.group(0), response])
+            for error in compiled_spurious:
+                match = error.search(line)
+                if match is not None:
+                    return None
+
+    # If no errors are found, the user may need to get involved
+    if len(errors) == 0:
+        errors.append(['unkown error', f"""If your problem persists,
+check the log file at "{LOG_PATH}"
+to check for errors and consider posting
+it to the Daisy Forum."""])
+
+    return errors
+
+
 def bootloader_thread():
-    try:
-        pass
-    except Exception as e:
-        terminal_output.append(str(e) + '\n')
+    terminal_output.append("Flashing daisy bootloader...\n")
+    return_code, logfile = pd2dsy.flash_bootloader(LOG_PATH)
+
+    if return_code:
+        errors = check_for_common_errors(NORMAL_FLASH_ERRORS, logfile)
+        if errors is not None:
+            for error, response in errors:
+                print_error(error, response)
+
+            terminal_output.append('\n')
+            return
+
+    terminal_output.append("Daisy bootloader successfully flashed!\n\n")
+
 
 def bootloader():
     thread = threading.Thread(target=bootloader_thread)
@@ -92,48 +214,6 @@ def rom_callback(value):
 
 rom_options = dsy_gui.RadioWrapper(upper_frame, 1, 4, 'ROM Option', ('Speed', 'Size'), id='w4', callback=rom_callback)
 
-output_browser = dsy_gui.FileBrowserWrapper(upper_frame, 0, 7, 'Output Folder', files=False, id='w5')
-
-def print_error(error, message):
-    terminal_output.append('Error: ', color="#df3626")
-    terminal_output.append(error + '\n', color='#59b8f7')
-    terminal_output.append(message + '\n')
-
-BUILD_ERRORS = {
-    'cannot find -ldaisy': f"""This probably means you haven't compiled libDaisy.
-The libDaisy folder this program uses is located in {os.path.join(PROJECT_DIRECTORY, 'libdaisy')}.
-If you open this path up in your terminal (type in "cd {os.path.join(PROJECT_DIRECTORY, 'libdaisy')}"
-without the quotes and hit enter), then type in "make" without quotes and hit enter,
-you should be able to build libDaisy without a problem. If you get an error (like "cannot find command make"),
-then you may need to install the Daisy toolchain. Instructions can be found at:
-https://github.com/electro-smith/DaisyWiki/wiki/1.-Setting-Up-Your-Development-Environment#1-Install-the-Toolchain""",
-}
-
-NORMAL_FLASH_ERRORS = {
-    'No DFU capable USB device available': f"""This probably means your daisy isn't
-in DFU mode. For the normal system bootloader,
-you can enter DFU mode by holding the BOOT button
-down and then pressing the RESET button. Then once
-you release the RESET button, you can also let go of
-the BOOT button."""
-}
-
-BOOTLOADER_FLASH_ERRORS = {
-
-}
-
-def check_for_common_errors(error_dict, logfile, spurious_errors=['Error during download get_status']):
-    errors = []
-    with open(logfile, 'r') as file:
-        for line in file:
-            for error, response in error_dict.items():
-                if error in line:
-                    errors.append([error, response])
-            for error in spurious_errors:
-                if error in line:
-                    return None
-
-    return errors
 
 def compile_thread():
     inputs = {
@@ -189,14 +269,8 @@ def compile_thread():
             errors = check_for_common_errors(BUILD_ERRORS, logfile)
 
             if errors is not None:
-                if len(errors) == 0:
-                    print_error(f"""unkown error occurred. If your problem persists,
-    check the log file at "{LOG_PATH}"
-    to check for errors and consider posting it
-    to the Daisy Forum.""")
-                else:
-                    for error, response in errors:
-                        print_error(error, response)
+                for error, response in errors:
+                    print_error(error, response)
 
                 terminal_output.append('\n')
                 return
@@ -205,19 +279,16 @@ def compile_thread():
 
         return_code, logfile = pd2dsy.flash_project(output, meta, main_file, args)
         if return_code:
-            errors = check_for_common_errors(NORMAL_FLASH_ERRORS, logfile)
+            error_dict = BOOTLOADER_FLASH_ERRORS if args.rom != 'speed' else NORMAL_FLASH_ERRORS
+            errors = check_for_common_errors(error_dict, logfile)
             if errors is not None:
-                if len(errors) == 0:
-                    print_error('unkown error', f"""If your problem persists,
-    check the log file at "{LOG_PATH}" to check for errors and consider posting it to the Daisy Forum.""")
-                else:
-                    for error, response in errors:
-                        print_error(error, response)
+                for error, response in errors:
+                    print_error(error, response)
 
                 terminal_output.append('\n')
                 return
 
-        terminal_output.append('Daisy successfully flashed!\n')
+        terminal_output.append('Daisy successfully flashed!\n\n')
 
     except Exception as e:
         # An exception almost certainly means an hvcc generated error

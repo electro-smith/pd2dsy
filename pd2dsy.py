@@ -205,8 +205,10 @@ def compile_project(output, meta, linker_file, args):
 
         makefile = makefile.replace('# GENERATE TARGET', f'TARGET={target}')
         makefile = makefile.replace('# LIBDAISY PATH', args.libdaisy_path)
-        if meta['daisy'].get('bootloader', False):
-            makefile = makefile.replace('# BOOTLOADER', 'C_DEFS += -DBOOT_APP')
+        if args.rom == 'size':
+            makefile = makefile.replace('# BOOTLOADER', 'APP_TYPE = BOOT_SRAM')
+        elif args.rom == 'double_size':
+            makefile = makefile.replace('# BOOTLOADER', 'APP_TYPE = BOOT_QSPI')
 
         if linker_file != '':
             makefile = makefile.replace('# LINKER', f'LDSCRIPT = {linker_file}')
@@ -243,7 +245,6 @@ def compile_project(output, meta, linker_file, args):
 def flash_project(output, meta, main_file, args):
 
     daisy_src = output if main_file is not None else os.path.join(output, 'source')
-    pgm_cmd = 'program-app' if meta['daisy'].get('bootloader', False) else 'program-dfu'
 
     logfile = None
     return_code = 0
@@ -252,7 +253,7 @@ def flash_project(output, meta, main_file, args):
         if args.log is not None:
             logfile = open(args.log, 'a')
 
-        build_process = subprocess.Popen(f'make {pgm_cmd} -C {daisy_src}',
+        build_process = subprocess.Popen(f'make program-dfu -C {daisy_src}',
             shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         for line in build_process.stdout:
@@ -272,7 +273,7 @@ def flash_bootloader(log):
     logfile = None
 
     if log is not None:
-        logfile = open(log, 'a')
+        logfile = open(log, 'w')
 
     build_process = subprocess.Popen(f'make program-boot -C {os.path.join(PD2DSY_DIRECTORY, "libdaisy", "core")}',
         shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
