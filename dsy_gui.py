@@ -264,6 +264,8 @@ class ProjectManager:
         menu.add_command(label="Save", command=self.operation_save, accelerator=f'{modifier}+S')
         menu.add_command(label="Save as...", command=self.operation_save_as, accelerator=f'{modifier}+Shift+S')
 
+        self.example_paths = []
+
         if examples is not None:
             menu.add_separator()
 
@@ -272,6 +274,7 @@ class ProjectManager:
 
             for example in examples:
                 self.menu_examples.add_command(label=example[0], command=lambda f=example[1]: self.load_recent_or_example(f))
+                self.example_paths.append(example[1])
 
         modifier = 'Command' if platform == 'darwin' else 'Control'
 
@@ -499,7 +502,7 @@ class ProjectManager:
             self.load_project(file_path)
 
     def operation_save(self, *args):
-        if self.config['current_project_path'] is None:
+        if self.config['current_project_path'] is None or self.config['current_project_path'] in self.example_paths:
             self.operation_save_as()
         else:
             if not self.get_unchanged():
