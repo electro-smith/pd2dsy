@@ -187,9 +187,9 @@ class TextFieldWrapper:
 
         self.field = tk.Text(frame, bg=self.background_color,
             fg=self.foreground_color, height=10, width=10, insertontime=0)
-        self.field.pack(fill=tk.BOTH, expand=True)
+        self.field.pack(side='left', fill=tk.BOTH, expand=True)
 
-        self.scrollbar = ttk.Scrollbar(self.field)
+        self.scrollbar = ttk.Scrollbar(frame)
         self.scrollbar.pack(side = 'right',fill='y')
         self.scrollbar.config(command=self.field.yview)
         self.field.config(yscrollcommand=self.scrollbar.set)
@@ -197,16 +197,16 @@ class TextFieldWrapper:
         # kill all events that can change the text,
         # including all typing (even shortcuts for
         # copy and select all)
-        self.field.bind("<<Cut>>", self.kill_event)
-        self.field.bind("<<Paste>>", self.kill_event)
-        self.field.bind("<<Paste-Selection>>", self.kill_event)
-        self.field.bind("<<Clear>>", self.kill_event)
-        self.field.bind("<Key>", self.kill_event)
+        self.field.bind("<<Cut>>", self._kill_event)
+        self.field.bind("<<Paste>>", self._kill_event)
+        self.field.bind("<<Paste-Selection>>", self._kill_event)
+        self.field.bind("<<Clear>>", self._kill_event)
+        self.field.bind("<Key>", self._kill_event)
         # restore copy and select all
         for evt in self.field.event_info("<<Copy>>"):
-            self.field.bind(evt, self.do_copy)
+            self.field.bind(evt, self._do_copy)
         for evt in self.field.event_info("<<Select-All>>"):
-            self.field.bind(evt, self.do_select_all)
+            self.field.bind(evt, self._do_select_all)
 
         self.tags = {}
 
@@ -221,7 +221,7 @@ class TextFieldWrapper:
                     break
 
             if tag_to_use is None:
-                new_tag_name = self.generate_tag_name()
+                new_tag_name = self._generate_tag_name()
                 self.tags[new_tag_name] = color
                 self.field.tag_configure(new_tag_name, foreground=color)
                 tag_to_use = new_tag_name
@@ -234,16 +234,16 @@ class TextFieldWrapper:
         if sticky:
             self.field.see(tk.END)
 
-    def kill_event(self, evt):
+    def _kill_event(self, evt):
         return 'break'
 
-    def do_copy(self, evt):
+    def _do_copy(self, evt):
         self.field.event_generate('<<Copy>>')
 
-    def do_select_all(self, evt):
+    def _do_select_all(self, evt):
         self.field.event_generate('<<Select-All>>')
 
-    def generate_tag_name(self):
+    def _generate_tag_name(self):
         return f'tag_{len(self.tags)}'
 
 

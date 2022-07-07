@@ -10,7 +10,8 @@ import darkdetect
 import pd2dsy
 import dsy_gui
 
-USE_DARK_THEME = darkdetect.isDark() and not (platform == 'linux')
+# USE_DARK_THEME = darkdetect.isDark() and not (platform == 'linux')
+USE_DARK_THEME = darkdetect.isDark()
 PROJECT_DIRECTORY = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
 LOG_PATH = os.path.join(PROJECT_DIRECTORY, 'pd2dsy_build.txt')
@@ -44,10 +45,10 @@ project_manager = dsy_gui.ProjectManager(root, filemenu, window_title='pd2dsy',
     configuration_file=config_name, examples=project_examples)
 menubar.add_cascade(label="File", menu=filemenu)
 
-helpmenu = tk.Menu(menubar, tearoff=0)
-helpmenu.add_command(label="Help Index", command=lambda: 0)
-helpmenu.add_command(label="About...", command=lambda: 0)
-menubar.add_cascade(label="Help", menu=helpmenu)
+# helpmenu = tk.Menu(menubar, tearoff=0)
+# helpmenu.add_command(label="Help Index", command=lambda: 0)
+# helpmenu.add_command(label="About...", command=lambda: 0)
+# menubar.add_cascade(label="Help", menu=helpmenu)
 
 root.config(menu=menubar)
 
@@ -234,7 +235,7 @@ def compile_thread():
 
     # Validate arguments
     if inputs['pd_input'] == '':
-        print_error("file error", "please provide an input Pd file.")
+        print_error("file error", "Please provide an input Pd file.")
         encountered_error = True
     elif not os.path.exists(inputs['pd_input']):
         print_error("file error", f"unable to open Pd file at \"{inputs['pd_input']}\"")
@@ -242,7 +243,7 @@ def compile_thread():
 
     if board_dropdown.get_value() == 'Custom':
         if inputs['custom_json'] == '':
-            print_error("file error", "please provide a custom JSON file.")
+            print_error("file error", "Please provide a custom JSON file.")
             encountered_error = True
         elif not os.path.exists(inputs['custom_json']):
             print_error("file error", f"unable to open JSON file at \"{inputs['custom_json']}\"")

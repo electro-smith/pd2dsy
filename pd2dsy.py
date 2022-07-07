@@ -62,6 +62,10 @@ def halt():
     sys.exit(1)
 
 
+def construct_relative_libdaisy_path(libdaisy, output):
+    return os.path.relpath(output, libdaisy)
+
+
 def run_hvcc(args):
     tick = time.time()
 
@@ -204,7 +208,8 @@ def compile_project(output, meta, linker_file, args):
             makefile = file.read()
 
         makefile = makefile.replace('# GENERATE TARGET', f'TARGET={target}')
-        makefile = makefile.replace('# LIBDAISY PATH', args.libdaisy_path)
+        libdaisy_path = construct_relative_libdaisy_path(output, args.libdaisy_path)
+        makefile = makefile.replace('# LIBDAISY PATH', libdaisy_path)
         if args.rom == 'size':
             makefile = makefile.replace('# BOOTLOADER', 'APP_TYPE = BOOT_SRAM')
         elif args.rom == 'double_size':
