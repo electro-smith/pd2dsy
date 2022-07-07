@@ -9,3 +9,4 @@ pd_env
 pd2dsy_config.json
 dist/
 pd2dsy_build.txt
+pd2dsy_gui.spec
