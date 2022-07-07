@@ -212,7 +212,11 @@ def bootloader():
 flash_bootloader = dsy_gui.ButtonWrapper(upper_frame, 0, 9, 'Flash Bootloader', bootloader)
 
 def rom_callback(value):
-    flash_bootloader.enable(value == 'Size')
+    is_size = value == 'Size'
+    flash_bootloader.enable(is_size)
+    ram_options.enable(is_size)
+    if not is_size:
+        ram_options.variable.set('Speed')
 
 rom_options = dsy_gui.RadioWrapper(upper_frame, 1, 4, 'ROM Option', ('Speed', 'Size'), id='w4', callback=rom_callback)
 
