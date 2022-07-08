@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import pathlib
 import re
 import time
 import json
@@ -62,8 +63,13 @@ def halt():
     sys.exit(1)
 
 
+def to_posix(input_path):
+    return str(pathlib.PureWindowsPath(input_path).as_posix())
+
+
 def construct_relative_libdaisy_path(libdaisy, output):
-    return os.path.relpath(output, libdaisy)
+    relative_path = os.path.relpath(output, libdaisy)
+    return to_posix(relative_path)
 
 
 def run_hvcc(args):
@@ -78,12 +84,14 @@ def run_hvcc(args):
 
     basename = os.path.basename(inpath).split('.')[0]
     parent = args.directory
-    output = os.path.join(parent, basename)
+    output = os.path.normpath(os.path.join(parent, basename))
 
     if args.libdaisy_path is None:
         args.libdaisy_path = os.path.join(PD2DSY_DIRECTORY, 'libdaisy')
 
-    if os.path.exists(output) and not args.force:
+    args.libdaisy_path = os.path.normpath(args.libdaisy_path)
+
+    if os.path.isdir(output) and os.path.exists(output) and not args.force:
         if queryUser(f'"{output}" already exists. Overwrite?'):
             pass
         else:
@@ -92,6 +100,7 @@ def run_hvcc(args):
     print(f'Generating project in "{output}"')
 
     if args.custom_json == '':
+        args.custom_json = os.path.normpath(args.custom_json)
         if args.board is None:
             print(f'{Colours.red}Error:{Colours.end} when not using custom JSON (-c), the board must be specified (-b)')
             halt()
@@ -107,6 +116,7 @@ def run_hvcc(args):
         meta = {"daisy": {"board": custom_json['name'], "board_file": args.custom_json}}
 
     meta_path = os.path.join(os.path.dirname(__file__), "util/daisy.json")
+    meta_path = os.path.normpath(meta_path)
     ram_type = args.ram
 
     if ram_type not in ('size', 'speed'):
@@ -203,7 +213,7 @@ def compile_project(output, meta, linker_file, args):
         shutil.move(os.path.join(output, 'source', main_file), os.path.join(output, main_file))
         os.unlink(os.path.join(output, 'source', 'Makefile'))
 
-        makefile_path = os.path.join(os.path.dirname(__file__), 'util', 'Makefile')
+        makefile_path = os.path.join(PD2DSY_DIRECTORY, 'util', 'Makefile')
         with open(makefile_path, 'r') as file:
             makefile = file.read()
 
@@ -215,9 +225,12 @@ def compile_project(output, meta, linker_file, args):
         elif args.rom == 'double_size':
             makefile = makefile.replace('# BOOTLOADER', 'APP_TYPE = BOOT_QSPI')
 
-        if linker_file != '':
+        if linker_file:
+            linker_file = os.path.normpath(linker_file)
             makefile = makefile.replace('# LINKER', f'LDSCRIPT = {linker_file}')
-            shutil.copy2(os.path.join(os.path.dirname(__file__), 'util', linker_file), os.path.join(output, linker_file))
+            src = os.path.normpath(os.path.join(PD2DSY_DIRECTORY, 'util', linker_file))
+            dest = os.path.normpath(os.path.join(output, linker_file))
+            shutil.copy2(src, dest)
         with open(os.path.join(output, 'Makefile'), 'w') as file:
             file.write(makefile)
 
@@ -280,7 +293,9 @@ def flash_bootloader(log):
     if log is not None:
         logfile = open(log, 'w')
 
-    build_process = subprocess.Popen(f'make program-boot -C {os.path.join(PD2DSY_DIRECTORY, "libdaisy", "core")}',
+    core_path = to_posix(os.path.join(PD2DSY_DIRECTORY, "libdaisy", "core"))
+
+    build_process = subprocess.Popen(f'make program-boot -C {core_path}',
         shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     for line in build_process.stdout:

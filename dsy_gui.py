@@ -512,7 +512,9 @@ class ProjectManager:
         kwargs = {}
         if self.config['last_save_as_path'] is not None:
             kwargs['initialdir'] = self.config['last_save_as_path']
-        file_path = filedialog.asksaveasfilename(filetypes=(('pd2dsy project', '*.pd2dsy'), ('all files', '*.*')), **kwargs)
+        file_path = filedialog.asksaveasfilename(filetypes=(('pd2dsy project', '*.pd2dsy'), ('all files', '*.*')),
+            defaultextension="*.*",
+            **kwargs)
         if file_path:
             self.config['last_save_as_path'] = os.path.dirname(os.path.abspath(file_path))
             self.save_project(file_path)
