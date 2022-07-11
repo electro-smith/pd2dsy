@@ -9,7 +9,7 @@ PYI_CMD = pyinstaller
 else ifeq ($(UNAME), Darwin)
 ACTIVATE_COMMAND = . pd_env/bin/activate
 SEPARATOR = :
-PYI_CMD = pyinstaller
+PYI_CMD = python3 -m PyInstaller
 else
 ACTIVATE_COMMAND = ./pd_env/Scripts/activate
 SEPARATOR = ;
