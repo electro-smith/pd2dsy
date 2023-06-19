@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import pathlib
 import re
 import time
 import json
@@ -9,6 +10,9 @@ import argparse
 import subprocess
 import shutil
 import hvcc
+
+BOARDLIST = ['pod', 'patch', 'patch_init', 'field', 'petal']
+PD2DSY_DIRECTORY = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
 class Colours:
     purple = "\033[95m"
@@ -21,6 +25,21 @@ class Colours:
     bold = "\033[1m"
     underline = "\033[4m"
     end = "\033[0m"
+
+class InputObject:
+    def __init__(self, pd_input, **kwargs):
+        self.pd_input = pd_input
+        self.board = kwargs.get('board', BOARDLIST[0])
+        self.custom_json = kwargs.get('custom_json', None)
+        self.search_paths = kwargs.get('search_paths', None)
+        self.directory = kwargs.get('directory', None)
+        self.force = kwargs.get('force', False)
+        self.ram = kwargs.get('ram', 'speed')
+        self.rom = kwargs.get('rom', 'speed')
+        self.libdaisy_path = kwargs.get('libdaisy_path', None)
+        self.no_build = kwargs.get('no_build', False)
+        self.log = kwargs.get('log', None)
+        self.flash_bootloader = kwargs.get('flash_bootloader', False)
 
 # # Note -- this probably already exists as a module, but here's mine
 def queryUser(prompt, fallback='n'):
@@ -38,28 +57,24 @@ def queryUser(prompt, fallback='n'):
             response = input(prompt + 'please provide a valid yes/no input ')
         return True if response.lower().strip() in trueTuple else False
 
+
 def halt():
     print('No files generated.')
     sys.exit(1)
 
-def main():
+
+def to_posix(input_path):
+    return str(pathlib.PureWindowsPath(input_path).as_posix())
+
+
+def construct_relative_libdaisy_path(libdaisy, output):
+    relative_path = os.path.relpath(output, libdaisy)
+    return to_posix(relative_path)
+
+
+def run_hvcc(args):
     tick = time.time()
 
-    boardlist = ['pod', 'patch', 'patch_init', 'field', 'petal']
-
-    parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
-    parser.add_argument('pd_input', help='path to puredata file.')
-    parser.add_argument('-b', '--board', help=f'hardware platform for generated output. The supported boards are: {", ".join(boardlist)}', default=None)
-    parser.add_argument('-c', '--custom-json', type=str, help='provide a custom JSON board description', default='')
-    parser.add_argument('-p', '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
-    parser.add_argument('-d', '--directory', type=str, help="set the parent directory of the output.", default='.')
-    parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
-    parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
-    parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
-    parser.add_argument('--libdaisy-depth', type=int, help='specify the number of directories between the project and libDaisy.', default=1)
-    parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
-
-    args = parser.parse_args()
     inpath = os.path.abspath(args.pd_input)
     search_paths = args.search_paths or []
     copyright = ""
@@ -69,9 +84,14 @@ def main():
 
     basename = os.path.basename(inpath).split('.')[0]
     parent = args.directory
-    output = os.path.join(parent, basename)
+    output = os.path.normpath(os.path.join(parent, basename))
 
-    if os.path.exists(output) and not args.force:
+    if args.libdaisy_path is None:
+        args.libdaisy_path = os.path.join(PD2DSY_DIRECTORY, 'libdaisy')
+
+    args.libdaisy_path = os.path.normpath(args.libdaisy_path)
+
+    if os.path.isdir(output) and os.path.exists(output) and not args.force:
         if queryUser(f'"{output}" already exists. Overwrite?'):
             pass
         else:
@@ -80,6 +100,7 @@ def main():
     print(f'Generating project in "{output}"')
 
     if args.custom_json == '':
+        args.custom_json = os.path.normpath(args.custom_json)
         if args.board is None:
             print(f'{Colours.red}Error:{Colours.end} when not using custom JSON (-c), the board must be specified (-b)')
             halt()
@@ -93,8 +114,9 @@ def main():
             print(f'{Colours.red}Error:{Colours.end} unable to open custom json file "{args.custom_json}"')
             halt()
         meta = {"daisy": {"board": custom_json['name'], "board_file": args.custom_json}}
-    
+
     meta_path = os.path.join(os.path.dirname(__file__), "util/daisy.json")
+    meta_path = os.path.normpath(meta_path)
     ram_type = args.ram
 
     if ram_type not in ('size', 'speed'):
@@ -161,6 +183,10 @@ def main():
     if verbose:
         print("Total compile time: {0:.2f}ms".format(1000 * (time.time() - tick)))
 
+    return output, meta, linker_file, args
+
+
+def compile_project(output, meta, linker_file, args):
     # Reorganize project structure to be more friendly
 
     # delete unused folders
@@ -181,49 +207,150 @@ def main():
             main_file = file
             target = match.group(1)
             break
-    
+
     # If we can find the main file, then we can easily make the project structure even a bit nicer
     if main_file is not None:
         shutil.move(os.path.join(output, 'source', main_file), os.path.join(output, main_file))
         os.unlink(os.path.join(output, 'source', 'Makefile'))
 
-        makefile_path = os.path.join(os.path.dirname(__file__), 'util', 'Makefile')
+        makefile_path = os.path.join(PD2DSY_DIRECTORY, 'util', 'Makefile')
         with open(makefile_path, 'r') as file:
             makefile = file.read()
-        
-        makefile = makefile.replace('# GENERATE TARGET', f'TARGET={target}')
-        makefile = makefile.replace('# LIBDAISY DEPTH', '../'*args.libdaisy_depth)
-        if meta['daisy'].get('bootloader', False):
-            makefile = makefile.replace('# BOOTLOADER', 'C_DEFS += -DBOOT_APP')
 
-        if linker_file != '':
+        makefile = makefile.replace('# GENERATE TARGET', f'TARGET={target}')
+        libdaisy_path = construct_relative_libdaisy_path(output, args.libdaisy_path)
+        makefile = makefile.replace('# LIBDAISY PATH', libdaisy_path)
+        if args.rom == 'size':
+            makefile = makefile.replace('# BOOTLOADER', 'APP_TYPE = BOOT_SRAM')
+        elif args.rom == 'double_size':
+            makefile = makefile.replace('# BOOTLOADER', 'APP_TYPE = BOOT_QSPI')
+
+        if linker_file:
+            linker_file = os.path.normpath(linker_file)
             makefile = makefile.replace('# LINKER', f'LDSCRIPT = {linker_file}')
-            shutil.copy2(os.path.join(os.path.dirname(__file__), 'util', linker_file), os.path.join(output, linker_file))
+            src = os.path.normpath(os.path.join(PD2DSY_DIRECTORY, 'util', linker_file))
+            dest = os.path.normpath(os.path.join(output, linker_file))
+            shutil.copy2(src, dest)
         with open(os.path.join(output, 'Makefile'), 'w') as file:
             file.write(makefile)
 
-        if not args.no_build:
-            if meta['daisy'].get('bootloader', False):
-                build_process = subprocess.Popen(f'make -C {output} && make program-app -C {output}',
-                    shell=True, stderr=subprocess.STDOUT)
-            else:
-                build_process = subprocess.Popen(f'make -C {output} && make program-dfu -C {output}',
-                    shell=True, stderr=subprocess.STDOUT)
-                
-            build_process.wait()
 
-    else:
-        # If we weren't able to find the main file, then just resort to normal building
-        if not args.no_build:
-            daisy_src = os.path.join(output, 'source')
-            if meta['daisy'].get('bootloader', False):
-                build_process = subprocess.Popen(f'make -C {daisy_src} && make program-app -C {daisy_src}',
-                    shell=True, stderr=subprocess.STDOUT)
-            else:
-                build_process = subprocess.Popen(f'make -C {daisy_src} && make program-dfu -C {daisy_src}',
-                    shell=True, stderr=subprocess.STDOUT)
-                
-            build_process.wait()
+    # If we weren't able to find the main file, then just resort to normal building
+    daisy_src = output if main_file is not None else os.path.join(output, 'source')
+    logfile = None
+    return_code = 0
+
+    if not args.no_build:
+        if args.log is not None:
+            logfile = open(args.log, 'w')
+
+        build_process = subprocess.Popen(f'make -C {daisy_src}',
+            shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        for line in build_process.stdout:
+            decoded = line.decode('utf-8')
+            sys.stdout.write(decoded)
+            if logfile:
+                logfile.write(decoded)
+
+        return_code = build_process.wait()
+        if logfile:
+            logfile.close()
+
+    return return_code, main_file, args.log
+
+
+def flash_project(output, meta, main_file, args):
+
+    daisy_src = output if main_file is not None else os.path.join(output, 'source')
+
+    logfile = None
+    return_code = 0
+
+    if not args.no_build:
+        if args.log is not None:
+            logfile = open(args.log, 'a')
+
+        build_process = subprocess.Popen(f'make program-dfu -C {daisy_src}',
+            shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        for line in build_process.stdout:
+            decoded = line.decode('utf-8')
+            sys.stdout.write(decoded)
+            if logfile:
+                logfile.write(decoded)
+
+        return_code = build_process.wait()
+        if logfile:
+            logfile.close()
+
+    return return_code, args.log
+
+def flash_bootloader(log):
+    return_code = 0
+    logfile = None
+
+    if log is not None:
+        logfile = open(log, 'w')
+
+    core_path = to_posix(os.path.join(PD2DSY_DIRECTORY, "libdaisy", "core"))
+
+    build_process = subprocess.Popen(f'make program-boot -C {core_path}',
+        shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    for line in build_process.stdout:
+        decoded = line.decode('utf-8')
+        sys.stdout.write(decoded)
+        if logfile:
+            logfile.write(decoded)
+
+    return_code = build_process.wait()
+    if logfile:
+        logfile.close()
+
+    return return_code, log
+
+
+def main(args):
+    output, meta, linker_file, args = run_hvcc(args)
+    return_code, main_file, logfile = compile_project(output, meta, linker_file, args)
+    if return_code:
+        sys.exit(return_code)
+
+    return_code, logfile = flash_project(output, meta, main_file, args)
+    if return_code:
+        sys.exit(return_code)
+
 
 if __name__ == "__main__":
-    main()
+
+    class FlashBootloaderAction(argparse.Action):
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs, nargs=0)
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            return_code, logfile = flash_bootloader(None)
+            if return_code:
+                sys.exit(return_code)
+            parser.exit()
+
+    parser = argparse.ArgumentParser(description='Utility for converting Puredate files to Daisy projects, uses HVCC inside')
+    parser.register('action', 'flash_bootloader', FlashBootloaderAction)
+
+    parser.add_argument('pd_input', help='path to puredata file.')
+    parser.add_argument('-b', '--board', help=f'hardware platform for generated output. The supported boards are: {", ".join(BOARDLIST)}', default=None)
+    parser.add_argument('-c', '--custom-json', type=str, help='provide a custom JSON board description', default='')
+    parser.add_argument('-p', '--search_paths', action='append', help="Add a list of directories to search through for abstractions.")
+    parser.add_argument('-d', '--directory', type=str, help="set the parent directory of the output.", default='.')
+    parser.add_argument('-f', '--force', help='replace existing files without prompt', action='store_true')
+    parser.add_argument('--ram', type=str, help='follow with "speed" or "size" to optimize RAM usage for your desired parameter (defaults to speed).', default='speed')
+    parser.add_argument('--rom', type=str, help='follow with "speed", "size", or "double_size" to optimize ROM usage for your desired parameter (defaults to speed).', default='speed')
+    parser.add_argument('--libdaisy-path', type=str, help='specify the path to libDaisy (usually not necessary)', default=None)
+    parser.add_argument('--no-build',  help='prevent automatic building and flashing after hvcc generation', action='store_true')
+    parser.add_argument('--log', type=str, help='print build output to a log file instead of console', default=None)
+    parser.add_argument('--flash-bootloader', help='flash the Daisy bootloader and exit', action='flash_bootloader')
+
+    args = parser.parse_args()
+    print(args)
+    main(args)
