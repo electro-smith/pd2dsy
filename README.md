@@ -1,5 +1,7 @@
 # pd2dsy
 
+**This repo has been archived, in favor of the [Plug Data](https://plugdata.org/) project**
+
 Utility for converting Pure Data (Vanilla) patches to Daisy projects.
 
 ## Installation/Setup
